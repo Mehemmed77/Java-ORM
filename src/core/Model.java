@@ -2,9 +2,10 @@ package core;
 import annotations.Table;
 import annotations.Column;
 import customErrors.AnnotationNotPresent;
-
+import metadata.ColumnInfo;
+import utils.GenerateSQLScripts;
+import validators.ColumnValidator;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,21 +26,26 @@ public abstract class Model {
         return tableName;
     }
 
-    private static List<Column> getColumns(Class<? extends Model> clazz) {
-        List<Column> columns = new ArrayList<>();
+
+    private static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
+        List<ColumnInfo> columnInfos = new ArrayList<>();
+
         for (Field field: clazz.getDeclaredFields()) {
             if (field.isAnnotationPresent(Column.class)) {
                 Column column = field.getAnnotation(Column.class);
-                columns.add(column);
+
+                ColumnValidator.validateColumnName(clazz.getSimpleName(),field.getName(), column);
+
+                columnInfos.add(new ColumnInfo(field, column));
             }
         }
 
-        return columns;
+        return columnInfos;
     }
 
     // Entry point for creating table
     public static void createTable(Class<? extends Model> clazz) {
         String tableName = resolveTableName(clazz);
-        getColumns(clazz);
+        System.out.println(GenerateSQLScripts.generateSQLScriptFromTableAndColumns(tableName, getColumns(clazz)));
     }
 }

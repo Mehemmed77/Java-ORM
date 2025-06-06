@@ -9,9 +9,9 @@ import java.util.List;
 public class GenerateSQLScripts {
     public static String generateSQLScriptFromTableAndColumns(String tableName, List<ColumnInfo> columnInfos) {
         StringBuilder sb = new StringBuilder("CREATE TABLE ");
-        sb.append(tableName + " (");
+        sb.append(tableName).append(" (");
 
-        if (columnInfos.size() == 0) throw new AbsenceOfColumns("Table must have at least 1 column.");
+        if (columnInfos.isEmpty()) throw new AbsenceOfColumns("Table must have at least 1 column.");
 
         for(int i = 0; i < columnInfos.size(); i++) {
             Column column = columnInfos.get(i).column();

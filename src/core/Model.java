@@ -2,6 +2,7 @@ package core;
 import annotations.Table;
 import annotations.Column;
 import customErrors.AnnotationNotPresent;
+import database.DatabaseManager;
 import metadata.ColumnInfo;
 import utils.GenerateSQLScripts;
 import validators.ColumnValidator;
@@ -46,6 +47,16 @@ public abstract class Model {
     // Entry point for creating table
     public static void createTable(Class<? extends Model> clazz) {
         String tableName = resolveTableName(clazz);
-        System.out.println(GenerateSQLScripts.generateSQLScriptFromTableAndColumns(tableName, getColumns(clazz)));
+        String tableCreationScript = GenerateSQLScripts.generateSQLScriptFromTableAndColumns(tableName, getColumns(clazz));
+
+        DatabaseManager databaseManager = DatabaseManager.getInstance();
+
+        if (DatabaseManager.isConnected()) {
+            databaseManager.executeCommand(tableCreationScript);
+        }
+    }
+
+    public Model save(Object... args) {
+
     }
 }

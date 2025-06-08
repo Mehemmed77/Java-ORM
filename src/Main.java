@@ -3,6 +3,8 @@ import core.Model;
 
 public class Main {
     public static void main(String[] args) {
-        Model.createTable(Restaurant.class);
+//        Model.createTable(Restaurant.class);
+        Restaurant restaurant = new Restaurant("McDona");
+        restaurant.save();
     }
 }

@@ -4,10 +4,12 @@ import annotations.Column;
 import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 public class GenerateSQLScripts {
-    public static String generateSQLScriptFromTableAndColumns(String tableName, List<ColumnInfo> columnInfos) {
+    public static String createTable(String tableName, List<ColumnInfo> columnInfos) {
         StringBuilder sb = new StringBuilder("CREATE TABLE ");
         sb.append(tableName).append(" (");
 
@@ -23,7 +25,7 @@ public class GenerateSQLScripts {
 
             sb.append(type).append(" ");
 
-            if (column.primaryKey()) sb.append("PRIMARY KEY ");
+            if (column.primaryKey()) sb.append("PRIMARY KEY AUTOINCREMENT ");
 
             if (!column.nullable()) sb.append("NOT NULL ");
             if (column.unique()) sb.append("UNIQUE ");
@@ -34,6 +36,44 @@ public class GenerateSQLScripts {
         sb.append(")");
 
         return sb.toString();
+    }
+
+    public static String InsertInto(LinkedHashMap<String, Object> columnToValues, String tableName) {
+        StringBuilder script = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
+
+        List<String> keyList = columnToValues.keySet().stream().toList();
+
+        String joinedKeys = String.join(",", keyList);
+
+        script.append(joinedKeys).append(") VALUES (");
+
+        for(int i = 0; i < keyList.size(); i++) {
+            Object val = columnToValues.get(keyList.get(i));
+
+            if (val instanceof String || val instanceof Character) {
+                script.append(
+                        String.format("'%s'", val)
+                );
+            }
+
+            else if (val == null) {
+                script.append("NULL");
+            }
+
+            else{
+                script.append(val);
+            }
+
+            if (i != keyList.size() - 1) script.append(",");
+        }
+
+        script.append(")");
+
+        return script.toString();
+    }
+
+    public static String tableExists(String table_name) {
+        return "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table_name + "'";
     }
 
     private static String formatVarchar(int length) {

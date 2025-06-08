@@ -1,7 +1,7 @@
 package enums;
 
 public enum ColumnType {
-    INT,
+    INTEGER,
     TEXT,
     REAL,
     BOOLEAN,

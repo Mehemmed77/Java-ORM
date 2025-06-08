@@ -1,10 +1,5 @@
 package database;
-import enums.ScriptResults;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class DatabaseManager {
     private static final String url = "jdbc:sqlite:C:\\Users\\user\\Desktop\\JavaORM\\src\\orm.db";
@@ -57,17 +52,43 @@ public class DatabaseManager {
         }
     }
 
-    // This is for table creation.
-    public ScriptResults executeCommand(String script) {
+    // This method serves to just execute and nothing else.
+    public void executeCommand(String script) {
         try {
             Statement statement = connection.createStatement();
             statement.executeUpdate(script);
-            return ScriptResults.SUCCESS;
         }
 
         catch (SQLException e) {
             System.out.println(e.getMessage());
-            return ScriptResults.FAIL;
+        }
+    }
+
+    // This method serves to just execute and nothing else.
+    public boolean executeCommandAndReturn(String script) {
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(script);
+
+            return rs.next();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
+
+    public int executePreparedStatement(String script) {
+        try{
+            System.out.println("Executing SQL: " + script);
+            PreparedStatement statement = connection.prepareStatement(script);
+            int n = statement.executeUpdate();
+
+            return n;
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return 0;
         }
     }
 }

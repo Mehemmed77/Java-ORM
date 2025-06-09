@@ -38,42 +38,13 @@ public class GenerateSQLScripts {
         return sb.toString();
     }
 
-    public static String InsertInto(LinkedHashMap<String, Object> columnToValues, String tableName) {
-        StringBuilder script = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
-
-        List<String> keyList = columnToValues.keySet().stream().toList();
-
-        String joinedKeys = String.join(",", keyList);
-
-        script.append(joinedKeys).append(") VALUES (");
-
-        for(int i = 0; i < keyList.size(); i++) {
-            Object val = columnToValues.get(keyList.get(i));
-
-            if (val instanceof String || val instanceof Character) {
-                script.append(
-                        String.format("'%s'", val)
-                );
-            }
-
-            else if (val == null) {
-                script.append("NULL");
-            }
-
-            else{
-                script.append(val);
-            }
-
-            if (i != keyList.size() - 1) script.append(",");
-        }
-
-        script.append(")");
-
-        return script.toString();
+    public static String generateParametrizedInsert(String tableName, List<String> keys) {
+        String placeholders = String.join(",", keys.stream().map(k -> "?").toList());
+        return "INSERT INTO " + tableName + " (" + String.join(",", keys) + ") VALUES (" + placeholders + ")";
     }
 
     public static String tableExists(String table_name) {
-        return "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table_name + "'";
+        return "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table_name + "'" + " LIMIT 1";
     }
 
     private static String formatVarchar(int length) {

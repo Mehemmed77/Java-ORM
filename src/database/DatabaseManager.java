@@ -1,5 +1,6 @@
 package database;
 import java.sql.*;
+import java.util.List;
 
 public class DatabaseManager {
     private static final String url = "jdbc:sqlite:C:\\Users\\user\\Desktop\\JavaORM\\src\\orm.db";
@@ -78,17 +79,19 @@ public class DatabaseManager {
         }
     }
 
-    public int executePreparedStatement(String script) {
-        try{
-            System.out.println("Executing SQL: " + script);
-            PreparedStatement statement = connection.prepareStatement(script);
-            int n = statement.executeUpdate();
+    public void executeInsert(List<Object> values, String script) {
+        try(PreparedStatement stmt = connection.prepareStatement(script)) {
+            System.out.println("Executing: " + script);
+            System.out.println("Values: " + values);
 
-            return n;
+            for(int i = 0; i < values.size(); i++) {
+                stmt.setObject(i + 1, values.get(i));
+            }
+
+            stmt.executeUpdate();
         }
-        catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return 0;
+        catch (Exception e) {
+            System.err.println("Insert failed: " + e.getMessage());
         }
     }
 }

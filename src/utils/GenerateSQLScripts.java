@@ -1,15 +1,11 @@
 package utils;
-
 import annotations.Column;
 import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
-
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 public class GenerateSQLScripts {
-    public static String createTable(String tableName, List<ColumnInfo> columnInfos) {
+    public static String createTableScript(String tableName, List<ColumnInfo> columnInfos) {
         StringBuilder sb = new StringBuilder("CREATE TABLE ");
         sb.append(tableName).append(" (");
 
@@ -38,12 +34,16 @@ public class GenerateSQLScripts {
         return sb.toString();
     }
 
-    public static String generateParametrizedInsert(String tableName, List<String> keys) {
+    public static String dropTableScript(String tableName) {
+        return "DROP TABLE " + tableName;
+    }
+
+    public static String generateParameterizedInsert(String tableName, List<String> keys) {
         String placeholders = String.join(",", keys.stream().map(k -> "?").toList());
         return "INSERT INTO " + tableName + " (" + String.join(",", keys) + ") VALUES (" + placeholders + ")";
     }
 
-    public static String tableExists(String table_name) {
+    public static String tableExistsScript(String table_name) {
         return "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table_name + "'" + " LIMIT 1";
     }
 

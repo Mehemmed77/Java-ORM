@@ -3,13 +3,12 @@ import java.sql.*;
 import java.util.List;
 
 public class DatabaseManager {
-    private static final String url = "jdbc:sqlite:C:\\Users\\user\\Desktop\\JavaORM\\src\\orm.db";
+    private static String url = "jdbc:sqlite:C:\\Users\\user\\Desktop\\JavaORM\\src\\orm.db";
     private static Connection connection;
     private static DatabaseManager instance;
 
     private DatabaseManager() {
         System.out.println("DatabaseManager is Instantiated");
-        connect();
     }
 
     public static DatabaseManager getInstance() {
@@ -31,8 +30,16 @@ public class DatabaseManager {
         }));
     }
 
+    public static void connect(String newUrl) {
+        url = newUrl;
+        connect();
+    }
+
     public static void connect() {
         try{
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
             connection = DriverManager.getConnection(url);
         }
         catch (SQLException e) {
@@ -55,8 +62,7 @@ public class DatabaseManager {
 
     // This method serves to just execute and nothing else.
     public void executeCommand(String script) {
-        try {
-            Statement statement = connection.createStatement();
+        try(Statement statement = connection.createStatement()) {
             statement.executeUpdate(script);
         }
 
@@ -67,8 +73,7 @@ public class DatabaseManager {
 
     // This method serves to just execute and nothing else.
     public boolean executeCommandAndReturn(String script) {
-        try {
-            Statement statement = connection.createStatement();
+        try(Statement statement = connection.createStatement()) {
             ResultSet rs = statement.executeQuery(script);
 
             return rs.next();
@@ -90,7 +95,7 @@ public class DatabaseManager {
 
             stmt.executeUpdate();
         }
-        catch (Exception e) {
+        catch (SQLException e) {
             System.err.println("Insert failed: " + e.getMessage());
         }
     }

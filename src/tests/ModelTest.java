@@ -1,10 +1,12 @@
 package tests;
 
 import core.Model;
+import customErrors.MissingTableException;
 import customErrors.TableAlreadyExistsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import database.DatabaseManager;
+import tests.tables.DummyTable;
 import tests.tables.PlaceholderTable;
 import tests.tables.TestTable;
 
@@ -61,5 +63,36 @@ public class ModelTest {
         Model.dropTable(PlaceholderTable.class);
     }
 
+    @Test
+    public void testSaveFailsWhenTableMissing() {
+        PlaceholderTable dummy = new PlaceholderTable("dummy");
 
+        assertThrows(MissingTableException.class, dummy::save,
+                "Expected MissingTableException on save when the table is missing");
+    }
+
+    @Test
+    public void testDropTable() {
+        DatabaseManager.connect(TEST_DB_URL);
+
+        // Make sure table does not exist at the start
+        Model.dropTable(DummyTable.class);
+
+        // Create table
+        Model.createTable(DummyTable.class);
+
+        // Drop table again
+        Model.dropTable(DummyTable.class);
+
+        // Attempting to save should now throw MissingTableException
+        DummyTable dummy = new DummyTable("a", 1);
+        assertThrows(MissingTableException.class, dummy::save,
+                "Expected MissingTableException");
+
+        // Create table again and it should not throw again
+        Model.createTable(DummyTable.class);
+        assertDoesNotThrow(dummy::save);
+
+        Model.dropTable(DummyTable.class);
+    }
 }

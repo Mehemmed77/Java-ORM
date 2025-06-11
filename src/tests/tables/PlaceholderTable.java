@@ -10,5 +10,10 @@ public class PlaceholderTable extends Model {
     @Column(name="id", type= ColumnType.INTEGER, primaryKey = true, autoIncrement = true)
     private int id;
 
-    public PlaceholderTable() {}
+    @Column(name="name", type = ColumnType.VARCHAR, length = 40)
+    private String name;
+
+    public PlaceholderTable(String name) {
+        this.name = name;
+    }
 }

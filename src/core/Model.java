@@ -3,17 +3,21 @@ import annotations.Table;
 import annotations.Column;
 import customErrors.*;
 import database.DatabaseManager;
+import manager.QuerySet;
 import metadata.ColumnInfo;
+import customErrors.MultipleColumnsWithSameNameException;
 import utils.GenerateSQLScripts;
 import validators.ColumnValidator;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 public abstract class Model {
+    public static <T extends Model> QuerySet<T> objects(Class<T> modelClass){
+        return new QuerySet<>(modelClass);
+    }
+
     // Only checks annotation existence
-    private static void annotationPresent(Class<? extends Model> clazz) throws AnnotationNotPresent {
+    private static void annotationPresent(Class<? extends Model> clazz) {
         if (!clazz.isAnnotationPresent(Table.class)) throw new AnnotationNotPresent("Table annotation must be implemented");
     }
 
@@ -36,7 +40,7 @@ public abstract class Model {
 
     // Throws if table does not exist.
     private static void ensureTableExistsOrThrow(String tableName) {
-        if (!doesTableExist(tableName)) throw new TableAlreadyExistsException("Table named " + tableName + " does not exist");
+        if (!doesTableExist(tableName)) throw new MissingTableException("Table named " + tableName + " does not exist");
     }
 
     // Throws if table exists.
@@ -44,14 +48,20 @@ public abstract class Model {
         if (doesTableExist(tableName)) throw new TableAlreadyExistsException("Table named " + tableName + " already exists");
     }
 
-    private static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
+    public static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
         List<ColumnInfo> columnInfos = new ArrayList<>();
+        Set<String> columnNames = new HashSet<>();
 
         boolean primaryKeyExists = false;
 
         for (Field field: clazz.getDeclaredFields()) {
             if (field.isAnnotationPresent(Column.class)) {
                 Column column = field.getAnnotation(Column.class);
+
+                if(columnNames.contains(column.name())) {
+                    throw new MultipleColumnsWithSameNameException("Duplicate column name detected: " + column.name() + " in model " + clazz.getSimpleName());
+                }
+                columnNames.add(column.name());
 
                 if (column.primaryKey()) {
                     // throw error if there is more than 1 primary key column.
@@ -81,7 +91,6 @@ public abstract class Model {
 
     public static void dropTable(Class<? extends Model> clazz) {
         String tableName = resolveTableName(clazz);
-        ensureTableExistsOrThrow(tableName);
 
         String dropTableScript = GenerateSQLScripts.dropTableScript(tableName);
         DatabaseManager.getInstance().executeCommand(dropTableScript);

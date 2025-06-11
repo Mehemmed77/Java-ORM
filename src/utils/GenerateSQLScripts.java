@@ -35,7 +35,7 @@ public class GenerateSQLScripts {
     }
 
     public static String dropTableScript(String tableName) {
-        return "DROP TABLE " + tableName;
+        return "DROP TABLE IF EXISTS " + tableName;
     }
 
     public static String generateParameterizedInsert(String tableName, List<String> keys) {

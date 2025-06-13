@@ -1,10 +1,11 @@
 import Models.Restaurant;
 import core.Model;
 
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
-//        Model.createTable(Restaurant.class);
-        Restaurant restaurant = new Restaurant("Cafe Cit");
-        restaurant.save();
+        List<Restaurant> restaurants = Model.objects(Restaurant.class).getAll();
+        System.out.println(restaurants);
     }
 }

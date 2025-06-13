@@ -13,7 +13,9 @@ import java.util.*;
 
 public abstract class Model {
     public static <T extends Model> QuerySet<T> objects(Class<T> modelClass){
-        return new QuerySet<>(modelClass);
+        String tableName = resolveTableName(modelClass);
+        ensureTableExistsOrThrow(tableName);
+        return new QuerySet<>(modelClass, tableName, getColumns(modelClass));
     }
 
     // Only checks annotation existence

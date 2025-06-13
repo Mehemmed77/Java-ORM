@@ -1,9 +1,12 @@
 package database;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DatabaseManager {
-    private static String url = "jdbc:sqlite:C:\\Users\\user\\Desktop\\JavaORM\\src\\orm.db";
+    private static String url = "jdbc:sqlite:./src/orm.db";
     private static Connection connection;
     private static DatabaseManager instance;
 
@@ -15,6 +18,7 @@ public class DatabaseManager {
         if (instance == null){
             instance = new DatabaseManager();
         }
+        connect();
 
         return instance;
     }
@@ -82,6 +86,27 @@ public class DatabaseManager {
             System.out.println(e.getMessage());
             return false;
         }
+    }
+
+    public List<Map<String, Object>> executeSelectAndFetch(String script) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(script)) {
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+
+            while (rs.next()) {
+                Map<String, Object> row = new HashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+                results.add(row);
+            }
+        } catch (SQLException e) {
+            System.out.println("Select failed: " + e.getMessage());
+        }
+
+        return results;
     }
 
     public void executeInsert(List<Object> values, String script) {

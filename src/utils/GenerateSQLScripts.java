@@ -34,6 +34,10 @@ public class GenerateSQLScripts {
         return sb.toString();
     }
 
+    public static String getAllRowsScript(String tableName) {
+        return "SELECT * FROM " + tableName;
+    }
+
     public static String dropTableScript(String tableName) {
         return "DROP TABLE IF EXISTS " + tableName;
     }

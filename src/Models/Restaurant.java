@@ -12,7 +12,14 @@ public class Restaurant extends Model {
     @Column(name = "RestaurantName", type = ColumnType.VARCHAR, nullable = false, unique = true, length = 30)
     public String restaurantName;
 
+    public Restaurant(){}
+
     public Restaurant(String restaurantName) {
         this.restaurantName = restaurantName;
+    }
+
+    @Override
+    public String toString() {
+        return "Restaurant: " + this.id + " " + this.restaurantName;
     }
 }

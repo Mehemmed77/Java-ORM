@@ -88,25 +88,55 @@ public class DatabaseManager {
         }
     }
 
-    public List<Map<String, Object>> executeSelectAndFetch(String script) {
+    private List<Map<String, Object>> convertResultSetToListMap(ResultSet rs) {
         List<Map<String, Object>> results = new ArrayList<>();
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(script)) {
-            ResultSetMetaData meta = rs.getMetaData();
-            int columnCount = meta.getColumnCount();
+        try{
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
 
             while (rs.next()) {
                 Map<String, Object> row = new HashMap<>();
-                for (int i = 1; i <= columnCount; i++) {
-                    row.put(meta.getColumnName(i), rs.getObject(i));
+                for(int i = 1; i <= columnCount; i++) {
+                    row.put(metaData.getColumnName(i), rs.getObject(i));
                 }
                 results.add(row);
             }
+        }
+        catch (SQLException e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
+
+        return results;
+    }
+
+    public List<Map<String, Object>> executeSelectAndFetch(String script) {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(script)) {
+
+            return convertResultSetToListMap(rs);
+
         } catch (SQLException e) {
             System.out.println("Select failed: " + e.getMessage());
         }
 
-        return results;
+        return null;
+    }
+
+    public List<Map<String, Object>> executePreparedSelectAndFetch(List<Object> values, String script) {
+        try(PreparedStatement stmt = connection.prepareStatement(script)) {
+            System.out.println("Preparing: " + script);
+
+            for(int i = 0; i < values.size(); i++) {
+                stmt.setObject(i + 1, values.get(i));
+            }
+
+            return convertResultSetToListMap(stmt.executeQuery());
+
+        } catch (SQLException e) {
+            System.err.println("Parametrization failed " + e.getMessage());
+        }
+
+        return null;
     }
 
     public void executeInsert(List<Object> values, String script) {

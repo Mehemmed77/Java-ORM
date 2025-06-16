@@ -8,6 +8,8 @@ import metadata.ColumnInfo;
 import customErrors.MultipleColumnsWithSameNameException;
 import utils.GenerateSQLScripts;
 import validators.ColumnValidator;
+
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -16,6 +18,18 @@ public abstract class Model {
         String tableName = resolveTableName(modelClass);
         ensureTableExistsOrThrow(tableName);
         return new QuerySet<>(modelClass, tableName, getColumns(modelClass));
+    }
+
+    private static void ensureEmptyConstructorExistsOrThrow(Class<? extends Model> clazz) {
+        boolean exists = false;
+        for(Constructor<?> constructor: clazz.getDeclaredConstructors()) {
+            if(constructor.getParameterCount() == 0){
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists) throw new NoEmptyParameterConstructorException("Model table should have empty constructor.");
     }
 
     // Only checks annotation existence
@@ -101,7 +115,8 @@ public abstract class Model {
     // Entry point for creating table
     public static void createTable(Class<? extends Model> clazz) {
         String tableName = resolveTableName(clazz);
-        Model.ensureTableNotExistsOrThrow(tableName);
+        ensureEmptyConstructorExistsOrThrow(clazz);
+        ensureTableNotExistsOrThrow(tableName);
 
         String tableCreationScript = GenerateSQLScripts.createTableScript(tableName, getColumns(clazz));
 

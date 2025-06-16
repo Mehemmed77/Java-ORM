@@ -3,6 +3,7 @@ import annotations.Column;
 import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
 import java.util.List;
+import java.util.Map;
 
 public class GenerateSQLScripts {
     public static String createTableScript(String tableName, List<ColumnInfo> columnInfos) {
@@ -32,6 +33,12 @@ public class GenerateSQLScripts {
         sb.append(")");
 
         return sb.toString();
+    }
+
+    public static String generateParameterizedSelect(String tableName, String filterToSql) {
+        String selectStatement = "SELECT * FROM " + tableName + " WHERE ";
+
+        return selectStatement + filterToSql;
     }
 
     public static String getAllRowsScript(String tableName) {

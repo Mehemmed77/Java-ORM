@@ -51,7 +51,7 @@ public abstract class Model {
     // Helper class that returns if table exists or not.
     private static boolean doesTableExist(String tableName) {
         String script = GenerateSQLScripts.tableExistsScript(tableName);
-        return DatabaseManager.getInstance().executeCommandAndReturn(script);
+        return DatabaseManager.getInstance().hasResults(script, null);
     }
 
     // Throws if table does not exist.
@@ -109,7 +109,7 @@ public abstract class Model {
         String tableName = resolveTableName(clazz);
 
         String dropTableScript = GenerateSQLScripts.dropTableScript(tableName);
-        DatabaseManager.getInstance().executeCommand(dropTableScript);
+        DatabaseManager.getInstance().executeUpdate(dropTableScript, null);
     }
 
     // Entry point for creating table
@@ -120,11 +120,7 @@ public abstract class Model {
 
         String tableCreationScript = GenerateSQLScripts.createTableScript(tableName, getColumns(clazz));
 
-        DatabaseManager databaseManager = DatabaseManager.getInstance();
-
-        if (DatabaseManager.isConnected()) {
-            databaseManager.executeCommand(tableCreationScript);
-        }
+        DatabaseManager.getInstance().executeUpdate(tableCreationScript, null);
     }
 
     public void save() {
@@ -152,6 +148,6 @@ public abstract class Model {
         List<Object> values = columnToValues.values().stream().toList();
 
         String script = GenerateSQLScripts.generateParameterizedInsert(tableName, keys);
-        DatabaseManager.getInstance().executeInsert(values, script);
+        DatabaseManager.getInstance().executeUpdate(script, values);
     }
 }

@@ -5,15 +5,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// Singleton class responsible for managing the database connection and executing queries.
 public class DatabaseManager {
     private static String url = "jdbc:sqlite:./src/orm.db";
     private static Connection connection;
     private static DatabaseManager instance;
 
+    // Private constructor ensures singleton instantiation.
     private DatabaseManager() {
         System.out.println("DatabaseManager is Instantiated");
     }
 
+    // Returns the singleton instance and ensures connection is active.
     public static DatabaseManager getInstance() {
         if (instance == null){
             instance = new DatabaseManager();
@@ -23,22 +26,23 @@ public class DatabaseManager {
         return instance;
     }
 
-    // to avoid manually shutting down the browser.
-    // this method is always going to run making sure that connection is closed.
+    // Ensures DB connection is gracefully closed on JVM shutdown.
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (isConnected()) {
+            if (connection != null) {
                 System.out.println("Closing DB connection gracefully...");
                 close();
             }
         }));
     }
 
+    // Sets a new database URL and reconnects.
     public static void connect(String newUrl) {
         url = newUrl;
         connect();
     }
 
+    // Connects to the database using the current URL.
     public static void connect() {
         try{
             if (connection != null && !connection.isClosed()) {
@@ -51,10 +55,7 @@ public class DatabaseManager {
         }
     }
 
-    public static boolean isConnected() {
-        return connection != null;
-    }
-
+    // Closes the database connection.
     public static void close() {
         try{
             connection.close();
@@ -64,30 +65,116 @@ public class DatabaseManager {
         }
     }
 
-    // This method serves to just execute and nothing else.
-    public void executeCommand(String script) {
-        try(Statement statement = connection.createStatement()) {
-            statement.executeUpdate(script);
+    // Executes a raw SQL command (CREATE, DROP, DELETE) with and without parameters.
+    public int executeUpdate(String script, List<Object> values) {
+        try {
+            if (values == null || values.isEmpty()) {
+                try(Statement statement = connection.createStatement()) {
+                    return statement.executeUpdate(script);
+                }
+            }
+            else {
+                try(PreparedStatement stmt = connection.prepareStatement(script)) {
+                    System.out.println("Executing: " + script);
+                    System.out.println("Values: " + values);
+                    for(int i = 0; i < values.size(); i++) {
+                        stmt.setObject(i + 1, values.get(i));
+                    }
+
+                    return stmt.executeUpdate();
+                }
+            }
+        }
+        catch (SQLException e) {
+            System.err.println("Update failed: " + e.getMessage());
+        }
+
+        return 0;
+    }
+
+    public List<Map<String, Object>> executeSelectQuery(String script, List<Object> values) {
+        try {
+            if (values == null || values.isEmpty()) {
+                try(Statement stmt = connection.createStatement()) {
+                    ResultSet rs = stmt.executeQuery(script);
+                    return convertResultSetToListMap(rs);
+                }
+            }
+
+            else{
+                try(PreparedStatement stmt = connection.prepareStatement(script)) {
+                    for(int i = 0; i < values.size(); i++) {
+                        stmt.setObject(i + 1, values.get(i));
+                    }
+
+                    return  convertResultSetToListMap(stmt.executeQuery());
+                }
+            }
+        }
+
+        catch (SQLException e) {
+            System.out.println("Select Failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    // Executes a SELECT query and returns true if any rows exist.
+    public boolean hasResults(String script, List<Object> values) {
+        try{
+            if(values == null || values.isEmpty()) {
+                try(Statement stmt = connection.createStatement();){
+                    return stmt.executeQuery(script).next();
+                }
+            }
+            else{
+                try(PreparedStatement stmt = connection.prepareStatement(script)){
+                    for(int i = 0; i < values.size(); i++) {
+                        stmt.setObject(i + 1, values.get(i));
+                    }
+
+                    return stmt.executeQuery().next();
+                }
+            }
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return false;
+    }
+
+    public int executeAndReturnCount(String script, List<Object> values) {
+        try{
+            if (values == null || values.isEmpty()) {
+                try(Statement stmt = connection.createStatement()) {
+                    ResultSet rs = stmt.executeQuery(script);
+                    rs.next();
+                    return rs.getInt(1);
+                }
+            }
+
+            else{
+                try(PreparedStatement stmt = connection.prepareStatement(script)){
+                    for(int i = 0; i < values.size(); i++) {
+                        stmt.setObject(i + 1, values.get(i));
+                    }
+
+                    ResultSet rs = stmt.executeQuery();
+                    rs.next();
+                    return rs.getInt(1);
+                }
+            }
         }
 
         catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+
+        return 0;
     }
 
-    // This method serves to just execute and nothing else.
-    public boolean executeCommandAndReturn(String script) {
-        try(Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery(script);
-
-            return rs.next();
-        }
-        catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false;
-        }
-    }
-
+    // Converts a ResultSet into a list of maps (column name → value).
     private List<Map<String, Object>> convertResultSetToListMap(ResultSet rs) {
         List<Map<String, Object>> results = new ArrayList<>();
         try{
@@ -107,51 +194,5 @@ public class DatabaseManager {
         }
 
         return results;
-    }
-
-    public List<Map<String, Object>> executeSelectAndFetch(String script) {
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(script)) {
-
-            return convertResultSetToListMap(rs);
-
-        } catch (SQLException e) {
-            System.out.println("Select failed: " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    public List<Map<String, Object>> executePreparedSelectAndFetch(List<Object> values, String script) {
-        try(PreparedStatement stmt = connection.prepareStatement(script)) {
-            System.out.println("Preparing: " + script);
-
-            for(int i = 0; i < values.size(); i++) {
-                stmt.setObject(i + 1, values.get(i));
-            }
-
-            return convertResultSetToListMap(stmt.executeQuery());
-
-        } catch (SQLException e) {
-            System.err.println("Parametrization failed " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    public void executeInsert(List<Object> values, String script) {
-        try(PreparedStatement stmt = connection.prepareStatement(script)) {
-            System.out.println("Executing: " + script);
-            System.out.println("Values: " + values);
-
-            for(int i = 0; i < values.size(); i++) {
-                stmt.setObject(i + 1, values.get(i));
-            }
-
-            stmt.executeUpdate();
-        }
-        catch (SQLException e) {
-            System.err.println("Insert failed: " + e.getMessage());
-        }
     }
 }

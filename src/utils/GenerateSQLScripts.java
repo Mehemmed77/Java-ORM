@@ -2,8 +2,10 @@ package utils;
 import annotations.Column;
 import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
+
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public class GenerateSQLScripts {
     public static String createTableScript(String tableName, List<ColumnInfo> columnInfos) {
@@ -35,10 +37,35 @@ public class GenerateSQLScripts {
         return sb.toString();
     }
 
-    public static String generateParameterizedSelect(String tableName, String filterToSql) {
+    public static String generateSelectScript(String tableName, String filterToSql) {
         String selectStatement = "SELECT * FROM " + tableName + " WHERE ";
 
         return selectStatement + filterToSql;
+    }
+
+    public static String generateExistsScript(String tableName, String filterToSql) {
+        return "SELECT 1 FROM " + tableName + " WHERE " + filterToSql + " LIMIT 1";
+    }
+
+    public static String generateCountAllScript(String tableName) {
+        return "SELECT COUNT(*) FROM " + tableName;
+    }
+
+    public static String generateCountScript(String tableName, String filterToSql) {
+        return "SELECT COUNT(*) FROM " + tableName + " WHERE " + filterToSql;
+    }
+
+    public static String deleteALlScript(String tableName) {
+        return "DELETE FROM " + tableName;
+    }
+
+    public static String generateDeleteScript(String tableName, String filterToSql) {
+        return "DELETE FROM " + tableName + " WHERE " + filterToSql;
+    }
+
+    public static String generateUpdateScript(String tableName, Set<String> keys, String filterToSql) {
+        String placeholders = String.join(",", keys.stream().map(key -> key + " = ?").toList());
+        return "UPDATE " + tableName + " SET " + placeholders + " WHERE " + filterToSql;
     }
 
     public static String getAllRowsScript(String tableName) {

@@ -5,10 +5,12 @@ import database.DatabaseManager;
 import filters.Filter;
 import metadata.ColumnInfo;
 import utils.GenerateSQLScripts;
+import validators.ValueValidator;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class QuerySet<T> {
     }
 
     private T hydrateSingleInstance(Map<String, Object> data) {
-        try{
+        try {
             T instance = constructor.newInstance();
 
             for(ColumnInfo col : columnInfos) {
@@ -46,7 +48,7 @@ public class QuerySet<T> {
             return instance;
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error occurred: " + e.getMessage());
         }
 
         return null;
@@ -55,7 +57,7 @@ public class QuerySet<T> {
     public List<T> getAll() {
         List<T> rows = new ArrayList<>();
         String selectAllScript = GenerateSQLScripts.getAllRowsScript(this.tableName);
-        List<Map<String, Object>> results = DatabaseManager.getInstance().executeSelectAndFetch(selectAllScript);
+        List<Map<String, Object>> results = DatabaseManager.getInstance().executeSelectQuery(selectAllScript, null);
 
         for(Map<String, Object> data: results) {
             rows.add(hydrateSingleInstance(data));
@@ -64,14 +66,76 @@ public class QuerySet<T> {
         return rows;
     }
 
+    public boolean exists(Filter filter) {
+        String script = GenerateSQLScripts.generateExistsScript(tableName, filter.toSQL());
+        return DatabaseManager.getInstance().hasResults(script, filter.getParameters());
+    }
+
+    // returns number of all existing rows in the table.
+    public int countAll() {
+        String script = GenerateSQLScripts.generateCountAllScript(tableName);
+        return DatabaseManager.getInstance().executeAndReturnCount(script, null);
+    }
+
+    public int count(Filter filter) {
+        if (filter == null) throw new
+                NullFilterException("Filter cannot be null, if you want to count all rows, use countAll() method.");
+
+        String script = GenerateSQLScripts.generateCountScript(tableName, filter.toSQL());
+        return DatabaseManager.getInstance().executeAndReturnCount(script, filter.getParameters());
+    }
+
     public T get(Filter filter) {
-        String script = GenerateSQLScripts.generateParameterizedSelect(tableName, filter.toSQL());
+        String script = GenerateSQLScripts.generateSelectScript(tableName, filter.toSQL());
         List<Map<String, Object>> results = DatabaseManager.getInstance().
-                executePreparedSelectAndFetch(filter.getParameters(), script);
+                executeSelectQuery(script, filter.getParameters());
 
         if (results.isEmpty()) throw new GetReturnedLessThanOneRowException("Get returned 0 columns, must return exactly one. Use filter instead.");
         if (results.size() > 1) throw new GetReturnedMoreThanOneRowException("Get returned more than one column must return exactly one. Use filter instead.");
 
         return hydrateSingleInstance(results.get(0));
+    }
+
+    public List<T> filter(Filter f) {
+        List<T> rows = new ArrayList<>();
+        String script = GenerateSQLScripts.generateSelectScript(tableName, f.toSQL());
+        List<Map<String, Object>> results = DatabaseManager.getInstance().executeSelectQuery(script, f.getParameters());
+
+        for(Map<String, Object> data: results) {
+            rows.add(hydrateSingleInstance(data));
+        }
+
+        return rows;
+    }
+
+    public int update(Map<String, Object> data, Filter filter) {
+        if (filter == null) throw new
+                NullFilterException("Filter cannot be null. If you want to update all rows, use updateAll() method.");
+
+        ValueValidator.validate(data, columnInfos);
+
+        LinkedHashMap<String, Object> orderedData = new LinkedHashMap<>(data);
+
+        String script = GenerateSQLScripts.generateUpdateScript(tableName, orderedData.keySet(), filter.toSQL());
+
+        List<Object> allValues = new ArrayList<>(orderedData.values());
+        allValues.addAll(filter.getParameters());
+
+        return DatabaseManager.getInstance().executeUpdate(script,
+                allValues);
+    }
+
+    public int deleteAll() {
+        System.out.println("WARNING: ALL ROWS WILL BE DELETED FROM THE TABLE: " + tableName);
+        String script = GenerateSQLScripts.deleteALlScript(tableName);
+        return DatabaseManager.getInstance().executeUpdate(script, null);
+    }
+
+    public int delete(Filter filter) {
+        if (filter == null) throw new NullFilterException("Filter cannot be null. If you want to delete all rows, use deleteAll() method.");
+
+        String script = GenerateSQLScripts.generateDeleteScript(tableName, filter.toSQL());
+
+        return DatabaseManager.getInstance().executeUpdate(script, filter.getParameters());
     }
 }

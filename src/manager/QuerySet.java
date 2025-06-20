@@ -1,18 +1,17 @@
 package manager;
 import customErrors.GetReturnedLessThanOneRowException;
 import customErrors.GetReturnedMoreThanOneRowException;
+import customErrors.NullFilterException;
 import database.DatabaseManager;
 import filters.Filter;
 import metadata.ColumnInfo;
 import utils.GenerateSQLScripts;
+import utils.TimeStampManager;
 import validators.ValueValidator;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class QuerySet<T> {
     private String tableName;
@@ -113,12 +112,21 @@ public class QuerySet<T> {
                 NullFilterException("Filter cannot be null. If you want to update all rows, use updateAll() method.");
 
         ValueValidator.validate(data, columnInfos);
+        TimeStampManager.validateNotManuallyUpdate(data.keySet());
 
         LinkedHashMap<String, Object> orderedData = new LinkedHashMap<>(data);
+        orderedData.put("updated_at", TimeStampManager.now());
 
-        String script = GenerateSQLScripts.generateUpdateScript(tableName, orderedData.keySet(), filter.toSQL());
+        String script = GenerateSQLScripts.generateUpdateScript(
+                tableName,
+                orderedData.keySet(),
+                orderedData,
+                filter.toSQL()
+        );
 
-        List<Object> allValues = new ArrayList<>(orderedData.values());
+        List<Object> allValues = new ArrayList<>(orderedData.values()
+                .stream().filter(Objects::nonNull).toList());
+
         allValues.addAll(filter.getParameters());
 
         return DatabaseManager.getInstance().executeUpdate(script,

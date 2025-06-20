@@ -13,6 +13,8 @@ public class PlaceholderTable extends Model {
     @Column(name="name", type = ColumnType.VARCHAR, length = 40)
     private String name;
 
+    public PlaceholderTable() {}
+
     public PlaceholderTable(String name) {
         this.name = name;
     }

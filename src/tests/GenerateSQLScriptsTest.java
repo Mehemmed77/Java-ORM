@@ -1,5 +1,6 @@
 package tests;
 import core.Model;
+import core.ModelInspector;
 import org.junit.jupiter.api.Test;
 import tests.tables.DummyTable;
 import utils.GenerateSQLScripts;
@@ -10,7 +11,7 @@ public class GenerateSQLScriptsTest {
     @Test
     public void testCreateTableScript_containsAllConstraints() {
         String generatedCreateTableScript = GenerateSQLScripts.createTableScript("DummyTable",
-                Model.getColumns(DummyTable.class));
+                ModelInspector.getColumns(DummyTable.class));
 
         String scriptToBeCompared = "CREATE TABLE DummyTable (id INTEGER PRIMARY KEY AUTOINCREMENT ,username varchar(255) NOT NULL UNIQUE ,age INTEGER NOT NULL )";
 

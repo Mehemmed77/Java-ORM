@@ -10,6 +10,8 @@ public class TableWithNoPrimaryKey extends Model {
     @Column(name="age", type=ColumnType.INTEGER)
     private int age;
 
+    public TableWithNoPrimaryKey(){}
+
     public TableWithNoPrimaryKey(int age){
         this.age = age;
     }

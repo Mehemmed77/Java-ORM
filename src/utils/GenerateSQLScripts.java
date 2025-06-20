@@ -4,6 +4,7 @@ import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -63,8 +64,10 @@ public class GenerateSQLScripts {
         return "DELETE FROM " + tableName + " WHERE " + filterToSql;
     }
 
-    public static String generateUpdateScript(String tableName, Set<String> keys, String filterToSql) {
-        String placeholders = String.join(",", keys.stream().map(key -> key + " = ?").toList());
+    public static String generateUpdateScript(String tableName, Set<String> keys, LinkedHashMap<String, Object> mappedValues, String filterToSql) {
+        String placeholders = String.join(",", keys.stream().map(
+                key -> mappedValues.get(key) != null ? key + " = ?" : key + " = NULL")
+                .toList());
         return "UPDATE " + tableName + " SET " + placeholders + " WHERE " + filterToSql;
     }
 

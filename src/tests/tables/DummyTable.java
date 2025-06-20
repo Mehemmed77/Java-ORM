@@ -15,6 +15,8 @@ public class DummyTable extends Model {
     @Column(name="age", type=ColumnType.INTEGER, nullable = false)
     private int age;
 
+    public DummyTable() {}
+
     public DummyTable(String username, int age) {
         this.username = username;
         this.age = age;

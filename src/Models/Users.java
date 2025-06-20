@@ -6,24 +6,20 @@ import enums.ColumnType;
 
 @Table
 public class Users extends Model {
-    @Column(name="id", type= ColumnType.INTEGER, primaryKey = true, autoIncrement = true)
+    @Column(name = "id", type = ColumnType.INTEGER, primaryKey = true, autoIncrement = true)
     public int id;
 
-    @Column(name = "username", type = ColumnType.VARCHAR, length = 50)
-    public String username;
+    @Column(name = "name", type = ColumnType.VARCHAR)
+    public String name;
 
-    @Column(name = "age", type = ColumnType.INTEGER)
-    public int age;
+    @Column(name = "email", type = ColumnType.VARCHAR)
+    public String email;
 
-    public Users(){}
-
-    public Users(String username, int age) {
-        this.username = username;
-        this.age = age;
-    }
+    @Column(name = "age", type = ColumnType.INTEGER, nullable = true)
+    public Integer age;
 
     @Override
     public String toString() {
-        return "User: " + username + " " + age;
+        return "User: " + name + " " + email + " " + age;
     }
 }

@@ -13,6 +13,8 @@ public class TableWithInvalidColumnName extends Model {
     @Column(name="Invalid name", type=ColumnType.VARCHAR)
     private String invalidName;
 
+    public TableWithInvalidColumnName(){}
+
     public TableWithInvalidColumnName(String invalidName) {
         this.invalidName = invalidName;
     }

@@ -15,6 +15,8 @@ public class TestTable extends Model {
     @Column(name="age", type = ColumnType.INTEGER)
     private int age;
 
+    public TestTable() {}
+
     public TestTable(String name, int age) {
         this.name = name;
         this.age = age;

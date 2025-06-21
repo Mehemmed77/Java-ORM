@@ -11,6 +11,8 @@ import java.util.*;
 
 public class ModelInspector {
     private static final Map<Class<? extends  Model>, List<ColumnInfo>> cache = new HashMap<>();
+    private static final Map<Class<? extends Model>, Field> pkFieldMap = new HashMap<>();
+    private static final Map<Class<? extends Model>, Integer> pkIndexMap = new HashMap<>();
 
     protected static void annotationPresent(Class<? extends Model> clazz) {
         if (!clazz.isAnnotationPresent(Table.class)) throw new AnnotationNotPresent("Table annotation must be implemented");
@@ -26,9 +28,18 @@ public class ModelInspector {
         return tableName;
     }
 
+    public static Field getPkField(Class<? extends Model> clazz) {
+        return pkFieldMap.getOrDefault(clazz, null);
+    }
+
+    public static int getPkIndex(Class<? extends  Model> clazz) {
+        return pkIndexMap.getOrDefault(clazz,-1);
+    }
+
     public static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
         if (cache.containsKey(clazz)) return cache.get(clazz);
 
+        int idx = -1;
         List<ColumnInfo> columnInfos = new ArrayList<>();
         Set<String> columnNames = new HashSet<>();
 
@@ -36,6 +47,7 @@ public class ModelInspector {
 
         for (Field field: clazz.getDeclaredFields()) {
             if (field.isAnnotationPresent(Column.class)) {
+                idx += 1;
                 Column column = field.getAnnotation(Column.class);
 
                 if(columnNames.contains(column.name())) {
@@ -47,7 +59,8 @@ public class ModelInspector {
                     // throw error if there is more than 1 primary key column.
                     if (primaryKeyExists) throw new MultiplePrimaryKeyException("Model " + clazz.getSimpleName() +
                             " has more than one @PrimaryKey column. Only one is allowed.");
-
+                    pkIndexMap.put(clazz, idx + 1);
+                    pkFieldMap.put(clazz, field);
                     primaryKeyExists = true;
                 }
 

@@ -82,6 +82,15 @@ public abstract class Model {
         List<Object> values = columnToValues.values().stream().toList();
 
         String script = GenerateSQLScripts.generateParameterizedInsert(tableName, keys);
-        DatabaseManager.getInstance().executeUpdate(script, values);
+
+        int id = DatabaseManager.getInstance().executeSave(this.getClass(), script, values);
+
+        Field field = ModelInspector.getPkField(this.getClass());
+
+        try {
+            field.set(this, id);
+        } catch (IllegalAccessException e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
     }
 }

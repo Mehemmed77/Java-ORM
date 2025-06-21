@@ -1,4 +1,7 @@
 package database;
+import core.Model;
+import core.ModelInspector;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,27 +68,56 @@ public class DatabaseManager {
         }
     }
 
+    public int executeSave(Class<? extends Model> clazz, String script, List<Object> values){
+        try {
+            try (PreparedStatement stmt = connection.prepareStatement(script, Statement.RETURN_GENERATED_KEYS)) {
+                System.out.println("Executing: " + script);
+                System.out.println("Values: " + values);
+
+                for (int i = 0; i < values.size(); i++) {
+                    stmt.setObject(i + 1, values.get(i));
+                }
+
+
+                stmt.executeUpdate();
+
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(ModelInspector.getPkIndex(clazz)); // return generated ID
+                    }
+                }
+
+
+            }
+        } catch (SQLException e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
+        return -1;
+    }
+
     // Executes a raw SQL command (CREATE, DROP, DELETE) with and without parameters.
     public int executeUpdate(String script, List<Object> values) {
         try {
             if (values == null || values.isEmpty()) {
-                try(Statement statement = connection.createStatement()) {
+                try (Statement statement = connection.createStatement()) {
                     return statement.executeUpdate(script);
                 }
             }
             else {
-                try(PreparedStatement stmt = connection.prepareStatement(script)) {
+                try (PreparedStatement stmt = connection.prepareStatement(script)) {
                     System.out.println("Executing: " + script);
                     System.out.println("Values: " + values);
-                    for(int i = 0; i < values.size(); i++) {
+
+                    for (int i = 0; i < values.size(); i++) {
                         stmt.setObject(i + 1, values.get(i));
                     }
 
-                    return stmt.executeUpdate();
+                    int affected = stmt.executeUpdate();
+
+                    return affected;
                 }
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             System.err.println("Update failed: " + e.getMessage());
         }
 

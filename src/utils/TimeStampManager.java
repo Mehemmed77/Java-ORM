@@ -5,8 +5,8 @@ import enums.ColumnType;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 
 public class TimeStampManager {
@@ -43,9 +43,11 @@ public class TimeStampManager {
     }
 
     public static void validateNotManuallyUpdate(Set<String> keySet) {
-        if (keySet.stream().filter(k ->
-                !(isCreatedAt(k) || isUpdatedAt(k))
-        ).toList().isEmpty()) throw new ManualTimestampAssignmentException("Timestamp fields cannot be updated.");
+        for (String key : keySet) {
+            if (isCreatedAt(key) || isUpdatedAt(key)) {
+                throw new ManualTimestampAssignmentException("Field '" + key + "' is managed by the ORM and cannot be updated manually.");
+            }
+        }
     }
 
 

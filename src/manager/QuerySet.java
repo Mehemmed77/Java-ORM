@@ -1,4 +1,6 @@
 package manager;
+import core.Model;
+import core.ModelInspector;
 import customErrors.GetReturnedLessThanOneRowException;
 import customErrors.GetReturnedMoreThanOneRowException;
 import customErrors.NullFilterException;
@@ -13,7 +15,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class QuerySet<T> {
+public class QuerySet<T extends Model> {
     private String tableName;
     private Class<T> modelClass;
     private List<ColumnInfo> columnInfos;
@@ -115,7 +117,10 @@ public class QuerySet<T> {
         TimeStampManager.validateNotManuallyUpdate(data.keySet());
 
         LinkedHashMap<String, Object> orderedData = new LinkedHashMap<>(data);
-        orderedData.put("updated_at", TimeStampManager.now());
+
+        if (ModelInspector.doesTableHaveUpdatedAtField(modelClass)) {
+            orderedData.put("updated_at", TimeStampManager.now());
+        }
 
         String script = GenerateSQLScripts.generateUpdateScript(
                 tableName,

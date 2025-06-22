@@ -5,6 +5,7 @@ import annotations.Table;
 import customErrors.*;
 import enums.ColumnType;
 import metadata.ColumnInfo;
+import utils.TimeStampManager;
 import validators.ColumnValidator;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -13,6 +14,7 @@ public class ModelInspector {
     private static final Map<Class<? extends  Model>, List<ColumnInfo>> cache = new HashMap<>();
     private static final Map<Class<? extends Model>, Field> pkFieldMap = new HashMap<>();
     private static final Map<Class<? extends Model>, Integer> pkIndexMap = new HashMap<>();
+    private static final Map<Class<? extends Model>, Boolean> doesContainUpdatedAtField = new HashMap<>();
 
     protected static void annotationPresent(Class<? extends Model> clazz) {
         if (!clazz.isAnnotationPresent(Table.class)) throw new AnnotationNotPresent("Table annotation must be implemented");
@@ -36,6 +38,14 @@ public class ModelInspector {
         return pkIndexMap.getOrDefault(clazz,-1);
     }
 
+    public static boolean doesTableHaveUpdatedAtField(Class<? extends Model> clazz) {
+        return doesContainUpdatedAtField.getOrDefault(clazz, false);
+    }
+
+    private static boolean doesPKNameMatch(Class<? extends Model> clazz, String colName) {
+        return colName.equals(clazz.getAnnotation( Table.class ).primaryKeyName());
+    }
+
     public static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
         if (cache.containsKey(clazz)) return cache.get(clazz);
 
@@ -53,12 +63,18 @@ public class ModelInspector {
                 if(columnNames.contains(column.name())) {
                     throw new MultipleColumnsWithSameNameException("Duplicate column name detected: " + column.name() + " in model " + clazz.getSimpleName());
                 }
+
                 columnNames.add(column.name());
 
                 if (column.primaryKey()) {
                     // throw error if there is more than 1 primary key column.
                     if (primaryKeyExists) throw new MultiplePrimaryKeyException("Model " + clazz.getSimpleName() +
                             " has more than one @PrimaryKey column. Only one is allowed.");
+
+                    if (!doesPKNameMatch( clazz, column.name())) throw new
+                            PrimaryKeyNameMismatchException("\"Declared primaryKeyName '\" + pkName + \"' " +
+                            "not found among model's @PrimaryKey fields.\"");
+
                     pkIndexMap.put(clazz, idx + 1);
                     pkFieldMap.put(clazz, field);
                     primaryKeyExists = true;
@@ -68,6 +84,8 @@ public class ModelInspector {
 
                 if (column.type() == ColumnType.TIMESTAMP) ColumnValidator.
                         validateTimeBasedColumns(clazz.getSimpleName(), field.getName(),column);
+
+                if (TimeStampManager.isUpdatedAt(column)) doesContainUpdatedAtField.put(clazz, true);
 
                 field.setAccessible(true);
                 columnInfos.add(new ColumnInfo(field, column));

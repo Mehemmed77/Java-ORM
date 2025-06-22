@@ -78,7 +78,6 @@ public class DatabaseManager {
                     stmt.setObject(i + 1, values.get(i));
                 }
 
-
                 stmt.executeUpdate();
 
                 try (ResultSet rs = stmt.getGeneratedKeys()) {

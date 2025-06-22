@@ -10,8 +10,8 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        Restaurant r = new Restaurant().set("restaurantName", "Mado");
-        r.save();
-        System.out.println(r.id);
+        Users user = Model.objects(Users.class).get(Filter.eq("id", 2));
+        user.name = "Mahammad";
+        user.save();
     }
 }

@@ -13,6 +13,8 @@ import validators.ValueValidator;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public class QuerySet<T extends Model> {
@@ -107,6 +109,33 @@ public class QuerySet<T extends Model> {
         }
 
         return rows;
+    }
+
+    public void bulkInsert(Model... instances) {
+        Connection conn = DatabaseManager.getInstance().getConnection();
+
+        try {
+            conn.setAutoCommit(false); // Begin transaction
+
+            for (Model instance : instances) {
+                instance.save();
+            }
+
+            conn.commit();
+        } catch (Exception e) {
+            try {
+                conn.rollback();
+            } catch (SQLException rollbackEx) {
+                System.err.println("Rollback failed: " + rollbackEx.getMessage());
+            }
+            throw new RuntimeException("Bulk insert failed: " + e.getMessage(), e);
+        } finally {
+            try {
+                conn.setAutoCommit(true); // Restore auto-commit
+            } catch (SQLException ex) {
+                System.err.println("Could not reset auto-commit: " + ex.getMessage());
+            }
+        }
     }
 
     public int update(Map<String, Object> data, Filter filter) {

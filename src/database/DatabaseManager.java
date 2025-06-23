@@ -21,12 +21,22 @@ public class DatabaseManager {
 
     // Returns the singleton instance and ensures connection is active.
     public static DatabaseManager getInstance() {
-        if (instance == null){
-            instance = new DatabaseManager();
+        if (instance == null) instance = new DatabaseManager();
+
+        try {
+            if (connection == null || connection.isClosed()) {
+                connect();
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking connection status: " + e.getMessage());
+            throw new RuntimeException("Failed to get active DB connection");
         }
-        connect();
 
         return instance;
+    }
+
+    public Connection getConnection() {
+        return connection;
     }
 
     // Ensures DB connection is gracefully closed on JVM shutdown.

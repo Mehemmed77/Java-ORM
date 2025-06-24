@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class SaveMixin {
-    private static Object getPkValue(Model instance) {
+    protected static Object getPkValue(Model instance) {
         Field field = ModelInspector.getPkField(instance.getClass());
 
         Object pkValue = null;

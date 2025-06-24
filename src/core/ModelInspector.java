@@ -1,6 +1,7 @@
 package core;
 
 import annotations.Column;
+import annotations.PrimaryKey;
 import annotations.Table;
 import customErrors.*;
 import enums.ColumnType;
@@ -42,10 +43,6 @@ public class ModelInspector {
         return doesContainUpdatedAtField.getOrDefault(clazz, false);
     }
 
-    private static boolean doesPKNameMatch(Class<? extends Model> clazz, String colName) {
-        return colName.equals(clazz.getAnnotation( Table.class ).primaryKeyName());
-    }
-
     public static List<ColumnInfo> getColumns(Class<? extends Model> clazz) {
         if (cache.containsKey(clazz)) return cache.get(clazz);
 
@@ -56,6 +53,7 @@ public class ModelInspector {
         boolean primaryKeyExists = false;
 
         for (Field field: clazz.getDeclaredFields()) {
+
             if (field.isAnnotationPresent(Column.class)) {
                 idx += 1;
                 Column column = field.getAnnotation(Column.class);
@@ -66,21 +64,16 @@ public class ModelInspector {
 
                 columnNames.add(column.name());
 
-                if (column.primaryKey()) {
-                    // throw error if there is more than 1 primary key column.
+                ColumnValidator.validateColumnName(clazz.getSimpleName(), field.getName(), column);
+
+                if (field.isAnnotationPresent(PrimaryKey.class)) {
                     if (primaryKeyExists) throw new MultiplePrimaryKeyException("Model " + clazz.getSimpleName() +
                             " has more than one @PrimaryKey column. Only one is allowed.");
-
-                    if (!doesPKNameMatch( clazz, column.name())) throw new
-                            PrimaryKeyNameMismatchException("\"Declared primaryKeyName '\" + pkName + \"' " +
-                            "not found among model's @PrimaryKey fields.\"");
 
                     pkIndexMap.put(clazz, idx + 1);
                     pkFieldMap.put(clazz, field);
                     primaryKeyExists = true;
                 }
-
-                ColumnValidator.validateColumnName(clazz.getSimpleName(), field.getName(), column);
 
                 if (column.type() == ColumnType.TIMESTAMP) ColumnValidator.
                         validateTimeBasedColumns(clazz.getSimpleName(), field.getName(),column);

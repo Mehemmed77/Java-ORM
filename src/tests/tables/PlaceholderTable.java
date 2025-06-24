@@ -7,7 +7,7 @@ import enums.ColumnType;
 
 @Table(name="PlaceholderTable")
 public class PlaceholderTable extends Model {
-    @Column(name="id", type= ColumnType.INTEGER, primaryKey = true, autoIncrement = true)
+    @Column(name="id", type= ColumnType.INTEGER)
     private int id;
 
     @Column(name="name", type = ColumnType.VARCHAR, length = 40)

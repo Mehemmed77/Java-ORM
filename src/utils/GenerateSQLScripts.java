@@ -1,8 +1,10 @@
 package utils;
 import annotations.Column;
+import annotations.PrimaryKey;
 import customErrors.AbsenceOfColumns;
 import metadata.ColumnInfo;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +19,7 @@ public class GenerateSQLScripts {
 
         for(int i = 0; i < columnInfos.size(); i++) {
             Column column = columnInfos.get(i).column();
+            Field field = columnInfos.get(i).field();
 
             sb.append(column.name()).append(" ");
 
@@ -25,7 +28,7 @@ public class GenerateSQLScripts {
 
             sb.append(type).append(" ");
 
-            if (column.primaryKey()) sb.append("PRIMARY KEY AUTOINCREMENT ");
+            if (field.isAnnotationPresent(PrimaryKey.class)) sb.append("PRIMARY KEY AUTOINCREMENT ");
 
             if (!column.nullable()) sb.append("NOT NULL ");
             if (column.unique()) sb.append("UNIQUE ");

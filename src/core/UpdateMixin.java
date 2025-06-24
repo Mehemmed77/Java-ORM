@@ -1,6 +1,7 @@
 package core;
 
 import annotations.Column;
+import annotations.PrimaryKey;
 import annotations.Table;
 import filters.Filter;
 import metadata.ColumnInfo;
@@ -15,8 +16,9 @@ public class UpdateMixin {
     @SuppressWarnings("unchecked")
     public static <T> void update(Model instance, Object pkValue) {
         Class<? extends Model> clazz = instance.getClass();
+        Field pkField = ModelInspector.getPkField(clazz);
 
-        String pkFieldName = clazz.getAnnotation(Table.class).primaryKeyName();
+        String pkFieldName = pkField.getAnnotation(Column.class).name();
 
         T selfTyped = (T) Model.objects(clazz).
                 get(Filter.eq(pkFieldName, pkValue));

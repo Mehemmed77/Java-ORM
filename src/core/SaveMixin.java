@@ -1,6 +1,8 @@
 package core;
 
 import annotations.Column;
+import annotations.ForeingKey;
+import annotations.PrimaryKey;
 import database.DatabaseManager;
 import metadata.ColumnInfo;
 import utils.GenerateSQLScripts;
@@ -51,7 +53,7 @@ public class SaveMixin {
                     continue;
                 }
 
-                if (!(column.primaryKey() && column.autoIncrement())) {
+                if (!(field.isAnnotationPresent(PrimaryKey.class))) {
                     columnToValues.put(column.name(), field.get(instance));
                 }
 
@@ -61,6 +63,7 @@ public class SaveMixin {
         }
 
         String insertScript = GenerateSQLScripts.generateParameterizedInsert(tableName, new ArrayList<>(columnToValues.keySet()));
+        System.out.println(insertScript);
         int generatedId = DatabaseManager.getInstance().executeSave(clazz, insertScript, new ArrayList<>(columnToValues.values()));
 
         Field pkField = ModelInspector.getPkField(clazz);

@@ -21,10 +21,6 @@ public class ColumnValidator {
                 || name.equalsIgnoreCase("updated_at"))) throw new IllegalArgumentException(
                         "Timestamps must have name of created_at or updated_at");
 
-        if (column.autoIncrement()) {
-            throw new IllegalArgumentException(modelName + "." + fieldName + ": autoIncrement cannot be true for " + name);
-        }
-
         if (!column.nullable()) {
             throw new IllegalArgumentException(modelName + "." + fieldName + ": " + name + " must be nullable (default auto-filled)");
         }

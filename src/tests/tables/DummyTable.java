@@ -6,7 +6,7 @@ import enums.ColumnType;
 
 @Table()
 public class DummyTable extends Model {
-    @Column(name="id", type= ColumnType.INTEGER, primaryKey = true, autoIncrement = true)
+    @Column(name="id", type= ColumnType.INTEGER)
     private int id;
 
     @Column(name="username", type=ColumnType.VARCHAR, nullable = false, unique = true)

@@ -11,10 +11,8 @@ import java.lang.annotation.Target;
 public @interface Column {
     String name();
     ColumnType type();
-    boolean primaryKey() default false;
     boolean nullable() default true;
     boolean unique() default false;
     int length() default 255;
-    boolean autoIncrement() default false;
     String defaultValue() default "LOREM IPSUM";
 }

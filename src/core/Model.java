@@ -1,5 +1,6 @@
 package core;
 import annotations.Column;
+import annotations.PrimaryKey;
 import manager.QuerySet;
 import metadata.ColumnInfo;
 
@@ -34,12 +35,11 @@ public abstract class Model {
         int idx = 0;
         try{
             for(ColumnInfo columnInfo: columnInfos) {
-                if (idx > values.length) break;
-
-                Column column = columnInfo.column();
-                if (!includePk && column.autoIncrement() && column.primaryKey()) continue;
+                if (idx > values.length || values.length == 0) break;
 
                 Field field = columnInfo.field();
+                if (!includePk && field.isAnnotationPresent(PrimaryKey.class)) continue;
+
                 field.setAccessible(true);
                 field.set(this, values[idx]);
                 idx++;

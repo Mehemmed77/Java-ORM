@@ -1,6 +1,7 @@
 package core;
 
 import annotations.Column;
+import annotations.ForeignKey;
 import annotations.PrimaryKey;
 import annotations.Table;
 import customErrors.*;
@@ -11,7 +12,7 @@ import validators.ColumnValidator;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class ModelInspector {
+public abstract class ModelInspector {
     private static final Map<Class<? extends  Model>, List<ColumnInfo>> cache = new HashMap<>();
     private static final Map<Class<? extends Model>, Field> pkFieldMap = new HashMap<>();
     private static final Map<Class<? extends Model>, Integer> pkIndexMap = new HashMap<>();
@@ -21,7 +22,7 @@ public class ModelInspector {
         if (!clazz.isAnnotationPresent(Table.class)) throw new AnnotationNotPresent("Table annotation must be implemented");
     }
 
-    protected static String resolveTableName(Class<? extends Model> clazz) {
+    public static String resolveTableName(Class<? extends Model> clazz) {
         annotationPresent(clazz);
         String tableName;
         Table table = clazz.getAnnotation(Table.class);
@@ -75,13 +76,16 @@ public class ModelInspector {
                     primaryKeyExists = true;
                 }
 
+                ForeignKey foreignKey = null;
+                if (field.isAnnotationPresent(ForeignKey.class)) foreignKey = field.getAnnotation(ForeignKey.class);
+
                 if (column.type() == ColumnType.TIMESTAMP) ColumnValidator.
                         validateTimeBasedColumns(clazz.getSimpleName(), field.getName(),column);
 
                 if (TimeStampManager.isUpdatedAt(column)) doesContainUpdatedAtField.put(clazz, true);
 
                 field.setAccessible(true);
-                columnInfos.add(new ColumnInfo(field, column));
+                columnInfos.add(new ColumnInfo(field, column, foreignKey));
             }
         }
 

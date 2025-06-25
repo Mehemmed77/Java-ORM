@@ -1,7 +1,6 @@
 package core;
 
 import annotations.Column;
-import annotations.ForeingKey;
 import annotations.PrimaryKey;
 import database.DatabaseManager;
 import metadata.ColumnInfo;

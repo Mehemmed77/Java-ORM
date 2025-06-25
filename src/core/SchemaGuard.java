@@ -28,7 +28,7 @@ public abstract class SchemaGuard {
     }
 
     // Throws if table does not exist.
-    protected static void ensureTableExistsOrThrow(String tableName) {
+    public static void ensureTableExistsOrThrow(String tableName) {
         if (!doesTableExist(tableName)) throw new MissingTableException("Table named " + tableName + " does not exist");
     }
 

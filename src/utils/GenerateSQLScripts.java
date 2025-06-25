@@ -1,44 +1,107 @@
 package utils;
 import annotations.Column;
+import annotations.ForeignKey;
 import annotations.PrimaryKey;
+import core.Model;
+import core.ModelInspector;
+import core.SchemaGuard;
 import customErrors.AbsenceOfColumns;
+import customErrors.ReferencedColumnMissingException;
+import enums.ReferentialAction;
 import metadata.ColumnInfo;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
 public class GenerateSQLScripts {
     public static String createTableScript(String tableName, List<ColumnInfo> columnInfos) {
+        if (columnInfos.isEmpty()) throw new AbsenceOfColumns("Table must have at least 1 column.");
+
         StringBuilder sb = new StringBuilder("CREATE TABLE ");
         sb.append(tableName).append(" (");
 
-        if (columnInfos.isEmpty()) throw new AbsenceOfColumns("Table must have at least 1 column.");
+        List<String> columnDefinitions = new ArrayList<>();
+        List<String> foreignKeyConstraints = new ArrayList<>();
 
-        for(int i = 0; i < columnInfos.size(); i++) {
-            Column column = columnInfos.get(i).column();
-            Field field = columnInfos.get(i).field();
+        for (ColumnInfo info : columnInfos) {
+            columnDefinitions.add(buildColumnDefinition(info));
+            if (info.foreignKey() != null) {
+                foreignKeyConstraints.add(buildForeignKeyConstraint(info));
+            }
+        }
 
-            sb.append(column.name()).append(" ");
+        sb.append(String.join(", ", columnDefinitions));
 
-            String type = column.type().name();
-            if(type.equals("VARCHAR")) type = formatVarchar(column.length());
-
-            sb.append(type).append(" ");
-
-            if (field.isAnnotationPresent(PrimaryKey.class)) sb.append("PRIMARY KEY AUTOINCREMENT ");
-
-            if (!column.nullable()) sb.append("NOT NULL ");
-            if (column.unique()) sb.append("UNIQUE ");
-
-            if (i != columnInfos.size() - 1) sb.append(",");
+        if (!foreignKeyConstraints.isEmpty()) {
+            sb.append(", ").append(String.join(", ", foreignKeyConstraints));
         }
 
         sb.append(")");
-
+        System.out.println(sb);
         return sb.toString();
+    }
+
+    private static String buildForeignKeyConstraint(ColumnInfo info) {
+        ForeignKey fk = info.foreignKey();
+        String referencedTableName = ModelInspector.resolveTableName(fk.reference());
+
+        // Ensure that referenced table is created.
+        SchemaGuard.ensureTableExistsOrThrow(referencedTableName);
+
+        boolean referencedColumnExists = false;
+        List<ColumnInfo> referencedTablesColumnInfo = ModelInspector.getColumns(fk.reference());
+
+        for(ColumnInfo columnInfo: referencedTablesColumnInfo) {
+            if (columnInfo.column().name().equals(fk.referencedColumnName())){
+                referencedColumnExists = true;
+                break;
+            }
+        }
+
+        if (!referencedColumnExists) throw new ReferencedColumnMissingException(
+                "Referenced column '" + fk.referencedColumnName() +
+                        "' does not exist in model '" + fk.reference().getSimpleName() + "'."
+        );
+
+        Column column = info.column();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("FOREIGN KEY (").append(column.name()).append(") ");
+        sb.append("REFERENCES ").append(referencedTableName)
+                .append("(").append(fk.referencedColumnName()).append(")");
+
+        if (fk.onDelete() != ReferentialAction.NO_ACTION) {
+            sb.append(" ON DELETE ").append(fk.onDelete().name()).append(" ");
+        }
+
+        if (fk.onUpdate() != ReferentialAction.NO_ACTION) {
+            sb.append(" ON UPDATE ").append(fk.onUpdate().name()).append(" ");
+        }
+
+        return sb.toString().trim();
+    }
+
+    private static String buildColumnDefinition(ColumnInfo info) {
+        Column column = info.column();
+        Field field = info.field();
+
+        StringBuilder def = new StringBuilder(column.name()).append(" ");
+
+        String type = column.type().name();
+        if (type.equals("VARCHAR")) type = formatVarchar(column.length());
+        def.append(type).append(" ");
+
+        if (field.isAnnotationPresent(PrimaryKey.class)) {
+            def.append("PRIMARY KEY AUTOINCREMENT");
+        }
+
+        if (!column.nullable()) def.append("NOT NULL ");
+        if (column.unique()) def.append("UNIQUE ");
+
+        return def.toString().trim();
     }
 
     public static String generateSelectScript(String tableName, String filterToSql) {

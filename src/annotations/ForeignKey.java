@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface ForeignKey {
     Class<? extends Model> reference();
-    String referencedColumnName() default "id";
+    String relatedName() default "";
+    boolean nullable() default true;
     ReferentialAction onDelete() default ReferentialAction.NO_ACTION; // optional: CASCADE, SET NULL, etc.
     ReferentialAction onUpdate() default ReferentialAction.NO_ACTION; // optional: CASCADE, SET NULL, etc.
 }

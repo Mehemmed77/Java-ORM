@@ -12,7 +12,6 @@ public class Author extends Model {
     @Column(name="id", type = ColumnType.INTEGER)
     public int id;
 
-    @Column(name="authorName", type = ColumnType.VARCHAR, length = 30)
+    @Column(name="authorName", type = ColumnType.VARCHAR, length = 30, unique = true)
     public String authorName;
-
 }

@@ -27,10 +27,8 @@ public class GenerateSQLScripts {
         List<String> foreignKeyConstraints = new ArrayList<>();
 
         for (ColumnInfo info : columnInfos) {
-            columnDefinitions.add(buildColumnDefinition(info));
-            if (info.foreignKey() != null) {
-                foreignKeyConstraints.add(buildForeignKeyConstraint(info));
-            }
+                columnDefinitions.add(buildColumnDefinition(info));
+                if (info.foreignKey() != null) foreignKeyConstraints.add(buildForeignKeyConstraint(info));
         }
 
         sb.append(String.join(", ", columnDefinitions));
@@ -51,27 +49,14 @@ public class GenerateSQLScripts {
         // Ensure that referenced table is created.
         SchemaGuard.ensureTableExistsOrThrow(referencedTableName);
 
-        boolean referencedColumnExists = false;
-        List<ColumnInfo> referencedTablesColumnInfo = ModelInspector.getColumns(fk.reference());
-
-        for(ColumnInfo columnInfo: referencedTablesColumnInfo) {
-            if (columnInfo.column().name().equals(fk.referencedColumnName())){
-                referencedColumnExists = true;
-                break;
-            }
-        }
-
-        if (!referencedColumnExists) throw new ReferencedColumnMissingException(
-                "Referenced column '" + fk.referencedColumnName() +
-                        "' does not exist in model '" + fk.reference().getSimpleName() + "'."
-        );
+        String referencedTablePkName = ModelInspector.getPkName(fk.reference());
 
         Column column = info.column();
         StringBuilder sb = new StringBuilder();
 
         sb.append("FOREIGN KEY (").append(column.name()).append(") ");
         sb.append("REFERENCES ").append(referencedTableName)
-                .append("(").append(fk.referencedColumnName()).append(")");
+                .append("(").append(referencedTablePkName).append(")");
 
         if (fk.onDelete() != ReferentialAction.NO_ACTION) {
             sb.append(" ON DELETE ").append(fk.onDelete().name()).append(" ");

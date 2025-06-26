@@ -1,6 +1,7 @@
 package core;
 
 import annotations.Column;
+import annotations.ForeignKey;
 import annotations.PrimaryKey;
 import database.DatabaseManager;
 import metadata.ColumnInfo;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class SaveMixin {
+public abstract class SaveMixin {
     protected static Object getPkValue(Model instance) {
         Field field = ModelInspector.getPkField(instance.getClass());
 
@@ -44,6 +45,7 @@ public class SaveMixin {
         for (ColumnInfo info : columnInfos) {
             Column column = info.column();
             Field field = info.field();
+
             try {
                 if (TimeStampManager.isManagedTimestamp(column)) {
                     TimeStampManager.validateNotManuallySet(instance, column, field);
@@ -53,7 +55,17 @@ public class SaveMixin {
                 }
 
                 if (!(field.isAnnotationPresent(PrimaryKey.class))) {
-                    columnToValues.put(column.name(), field.get(instance));
+                    if (info.foreignKey() != null) {
+                        ForeignKey fk = info.foreignKey();
+                        Model referencedTableInstance = (Model) field.get(instance);
+
+                        Field referencedTablePKField = ModelInspector.getPkField(fk.reference());
+                        columnToValues.put(column.name(), referencedTablePKField.get(referencedTableInstance));
+                    }
+
+                    else{
+                        columnToValues.put(column.name(), field.get(instance));
+                    }
                 }
 
             } catch (IllegalAccessException e) {
@@ -63,6 +75,7 @@ public class SaveMixin {
 
         String insertScript = GenerateSQLScripts.generateParameterizedInsert(tableName, new ArrayList<>(columnToValues.keySet()));
         System.out.println(insertScript);
+
         int generatedId = DatabaseManager.getInstance().executeSave(clazz, insertScript, new ArrayList<>(columnToValues.values()));
 
         Field pkField = ModelInspector.getPkField(clazz);

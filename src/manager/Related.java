@@ -4,6 +4,7 @@ import annotations.ForeignKey;
 import core.Model;
 import core.ModelInspector;
 import filters.Filter;
+import metadata.ReverseRelationMap;
 import utils.GenerateSQLScripts;
 
 import java.lang.reflect.Field;
@@ -35,8 +36,27 @@ public class Related {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public List<Model> get(String relatedName) {
-        return null;
+        List<ReverseRelationMap> relatedModels = ModelInspector.getRelatedModelsOfClass(instanceClass);
+
+        try {
+            for(ReverseRelationMap relationMap: relatedModels) {
+                if (relatedName.equals(relationMap.relatedName())) {
+                    // REFERENCING MODEL IS THE MODEL THAT HAS THE PRIMARY KEY!
+                    Field pkField = ModelInspector.getPkUtil(instanceClass).pkField();
+                    Object id = pkField.get(instance);
+                    String fkColumnName = relationMap.info().column().name();
+
+                    Filter filter = Filter.eq(fkColumnName, id);
+                    return (List<Model>) Model.objects(relationMap.info().foreignKey().reference()).filter(filter);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
+
+        throw new IllegalArgumentException("Related name '" + relatedName + "' is not valid for " + instanceClass.getSimpleName());
     }
 
     // INTERNAL: Register reverse relations during schema inspection
@@ -46,7 +66,7 @@ public class Related {
 
     private Object getPrimaryKeyValue(Model model) {
         try {
-            Field pkField = ModelInspector.getPkField(instanceClass);
+            Field pkField = ModelInspector.getPkUtil(instanceClass).pkField();
             return pkField.get(model);
         }
 

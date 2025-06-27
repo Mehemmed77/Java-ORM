@@ -16,7 +16,7 @@ public class UpdateMixin {
     @SuppressWarnings("unchecked")
     public static <T> void update(Model instance, Object pkValue) {
         Class<? extends Model> clazz = instance.getClass();
-        Field pkField = ModelInspector.getPkField(clazz);
+        Field pkField = ModelInspector.getPkUtil(clazz).pkField();
 
         String pkFieldName = pkField.getAnnotation(Column.class).name();
 

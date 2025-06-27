@@ -15,7 +15,7 @@ import java.util.List;
 
 public abstract class SaveMixin {
     protected static Object getPkValue(Model instance) {
-        Field field = ModelInspector.getPkField(instance.getClass());
+        Field field = ModelInspector.getPkUtil(instance.getClass()).pkField();
 
         Object pkValue = null;
 
@@ -59,7 +59,7 @@ public abstract class SaveMixin {
                         ForeignKey fk = info.foreignKey();
                         Model referencedTableInstance = (Model) field.get(instance);
 
-                        Field referencedTablePKField = ModelInspector.getPkField(fk.reference());
+                        Field referencedTablePKField = ModelInspector.getPkUtil(fk.reference()).pkField();
                         columnToValues.put(column.name(), referencedTablePKField.get(referencedTableInstance));
                     }
 
@@ -78,7 +78,7 @@ public abstract class SaveMixin {
 
         int generatedId = DatabaseManager.getInstance().executeSave(clazz, insertScript, new ArrayList<>(columnToValues.values()));
 
-        Field pkField = ModelInspector.getPkField(clazz);
+        Field pkField = ModelInspector.getPkUtil(clazz).pkField();
         try {
             pkField.set(instance, generatedId);
         } catch (IllegalAccessException e) {

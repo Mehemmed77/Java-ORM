@@ -49,7 +49,7 @@ public class GenerateSQLScripts {
         // Ensure that referenced table is created.
         SchemaGuard.ensureTableExistsOrThrow(referencedTableName);
 
-        String referencedTablePkName = ModelInspector.getPkName(fk.reference());
+        String referencedTablePkName = ModelInspector.getPkUtil(fk.reference()).pkName();
 
         Column column = info.column();
         StringBuilder sb = new StringBuilder();

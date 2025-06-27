@@ -92,7 +92,7 @@ public class DatabaseManager {
 
                 try (ResultSet rs = stmt.getGeneratedKeys()) {
                     if (rs.next()) {
-                        return rs.getInt(ModelInspector.getPkIndex(clazz)); // return generated ID
+                        return rs.getInt(ModelInspector.getPkUtil(clazz).pkIndex()); // return generated ID
                     }
                 }
 

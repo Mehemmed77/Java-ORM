@@ -5,9 +5,10 @@ import annotations.ForeignKey;
 import annotations.PrimaryKey;
 import customErrors.*;
 import enums.ColumnType;
+import manager.Related;
 import metadata.ColumnInfo;
 import metadata.PrimaryKeyUtils;
-import metadata.ReverseRelationMap;
+import metadata.RelationMeta;
 import utils.TimeStampManager;
 import validators.ColumnValidator;
 
@@ -23,7 +24,7 @@ public class ModelParser {
     private PrimaryKeyUtils pkUtil;
     private boolean hasUpdatedAt = false;
     private final List<ColumnInfo> foreignKeys = new ArrayList<>();
-    private final Map<Class<? extends Model>, List<ReverseRelationMap>> reverseRelations = new HashMap<>();
+    private final Map<Class<? extends Model>, List<RelationMeta>> reverseRelations = new HashMap<>();
 
     public ModelParser(Class<? extends Model> clazz) {
         this.clazz = clazz;
@@ -55,9 +56,9 @@ public class ModelParser {
                         ? resolveTableName(clazz).toLowerCase() + "_set"
                         : fk.relatedName();
 
-                reverseRelations
-                        .computeIfAbsent(fk.reference(), k -> new ArrayList<>())
-                        .add(new ReverseRelationMap(columnInfo, relatedName));
+                reverseRelations.putIfAbsent(fk.reference(), new ArrayList<>());
+
+                reverseRelations.get(fk.reference()).add(new RelationMeta( clazz, columnInfo.column().name(), relatedName, fk.reference()));
             }
 
             else if (field.isAnnotationPresent(Column.class)) {
@@ -120,7 +121,7 @@ public class ModelParser {
     }
 
     private String generateForeignKeyName(Field field, ForeignKey fk) {
-        String referencedPk = ModelInspector.getPkUtil(fk.reference()).pkName();
+        String referencedPk = ModelCache.pkUtilMap.get(fk.reference()).pkName();
         return field.getName() + "_" + referencedPk;
     }
 
@@ -136,7 +137,7 @@ public class ModelParser {
         return foreignKeys;
     }
 
-    public Map<Class<? extends Model>, List<ReverseRelationMap>> getReverseRelations() {
+    public Map<Class<? extends Model>, List<RelationMeta>> getReverseRelations() {
         return reverseRelations;
     }
 }

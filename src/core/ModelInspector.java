@@ -4,7 +4,8 @@ import annotations.Table;
 import customErrors.*;
 import metadata.ColumnInfo;
 import metadata.PrimaryKeyUtils;
-import metadata.ReverseRelationMap;
+import metadata.RelationMeta;
+
 import java.util.*;
 
 public abstract class ModelInspector {
@@ -20,10 +21,6 @@ public abstract class ModelInspector {
         else tableName = table.name();
 
         return tableName;
-    }
-
-    public static List<ReverseRelationMap> getRelatedModelsOfClass(Class<? extends Model> clazz) {
-        return ModelCache.relatedModels.getOrDefault(clazz, Collections.emptyList());
     }
 
     public static PrimaryKeyUtils getPkUtil(Class<? extends Model> clazz) {
@@ -42,11 +39,6 @@ public abstract class ModelInspector {
 
         ModelValidator.validateColumns(clazz, columnInfos);
         ModelLoader.load(clazz, columnInfos, parser);
-
-        for (Map.Entry<Class<? extends Model>, List<ReverseRelationMap>> entry : parser.getReverseRelations().entrySet()) {
-            ModelCache.relatedModels.putIfAbsent(entry.getKey(), new ArrayList<>());
-            ModelCache.relatedModels.get(entry.getKey()).addAll(entry.getValue());
-        }
 
         return columnInfos;
     }

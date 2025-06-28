@@ -22,7 +22,7 @@ public abstract class SchemaGuard {
     }
 
     // Helper class that returns if table exists or not.
-    protected static boolean doesTableExist(String tableName) {
+    public static boolean doesTableExist(String tableName) {
         String script = GenerateSQLScripts.tableExistsScript(tableName);
         return DatabaseManager.getInstance().hasResults(script, null);
     }

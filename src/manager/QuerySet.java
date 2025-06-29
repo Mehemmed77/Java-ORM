@@ -1,5 +1,7 @@
 package manager;
+import annotations.ForeignKey;
 import core.Model;
+import core.ModelCache;
 import core.ModelInspector;
 import customErrors.GetReturnedLessThanOneRowException;
 import customErrors.GetReturnedMoreThanOneRowException;
@@ -45,6 +47,13 @@ public class QuerySet<T extends Model> {
                 Field field = col.field();
 
                 Object value = data.get(columnName);
+
+                if (field.isAnnotationPresent(ForeignKey.class)) {
+                    field.set(instance, null);
+                    instance.proxyMap.put(field.getName(), value);
+                    continue;
+                }
+
                 field.set(instance, value);
             }
 

@@ -1,5 +1,6 @@
 package database;
 import core.Model;
+import core.ModelCache;
 import core.ModelInspector;
 
 import java.sql.*;
@@ -89,14 +90,15 @@ public class DatabaseManager {
                 }
 
                 stmt.executeUpdate();
+                String pkName = ModelCache.pkUtilMap.get(clazz).pkName();
 
-                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                try (Statement pkStmt = connection.createStatement();
+                     ResultSet rs = pkStmt.executeQuery("SELECT last_insert_rowid() AS " + pkName)) {
+
                     if (rs.next()) {
-                        return rs.getInt(ModelInspector.getPkUtil(clazz).pkIndex()); // return generated ID
+                        return rs.getInt(pkName);
                     }
                 }
-
-
             }
         } catch (SQLException e) {
             System.out.println("Error occurred: " + e.getMessage());

@@ -7,24 +7,24 @@ import annotations.Table;
 import core.Model;
 import enums.ColumnType;
 
-@Table()
-public class Article extends Model {
+@Table
+public class Comments extends Model {
     @PrimaryKey
     @Column(name = "id", type = ColumnType.INTEGER)
     public int id;
 
-    @Column(name = "content", type = ColumnType.TEXT)
-    public String content;
+    @Column(name = "comment", type = ColumnType.VARCHAR, length = 200)
+    public String comment;
 
-    @ForeignKey(reference = Author.class)
-    public Author author;
+    @ForeignKey(reference = Article.class, relatedName = "article")
+    public Article article;
 
     @Override
     public String toString() {
-        return "Article{" +
+        return "Comments{" +
                 "id=" + id +
-                ", content='" + content + '\'' +
-                ", author=" + author +
+                ", comment='" + comment + '\'' +
+                ", article=" + article +
                 '}';
     }
 }

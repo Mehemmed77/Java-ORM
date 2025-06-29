@@ -5,7 +5,6 @@ import annotations.ForeignKey;
 import annotations.PrimaryKey;
 import customErrors.*;
 import enums.ColumnType;
-import manager.Related;
 import metadata.ColumnInfo;
 import metadata.PrimaryKeyUtils;
 import metadata.RelationMeta;
@@ -28,6 +27,21 @@ public class ModelParser {
 
     public ModelParser(Class<? extends Model> clazz) {
         this.clazz = clazz;
+    }
+
+    public void parseOnlyPKs() {
+        boolean found = false;
+        for (Field field: clazz.getDeclaredFields()) {
+            if (!field.isAnnotationPresent(ForeignKey.class) && field.isAnnotationPresent(Column.class)) {
+                Column column = field.getAnnotation(Column.class);
+
+                if(field.isAnnotationPresent(PrimaryKey.class)) ModelCache.pkUtilMap.put(clazz, new PrimaryKeyUtils(field, column.name(), -1));
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) System.out.println("Warning: " + clazz.getSimpleName() + " has no primary key!");
     }
 
     public List<ColumnInfo> parse() {

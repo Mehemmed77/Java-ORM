@@ -1,14 +1,19 @@
 package core;
 import annotations.Column;
 import annotations.PrimaryKey;
+import filters.Filter;
 import manager.QuerySet;
 import metadata.ColumnInfo;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Model {
-    public static <T extends Model> QuerySet<T> objects(Class<T> modelClass){
+    public Map<String, Object> proxyMap = new HashMap<>();
+
+    public static <T extends Model> QuerySet<T> objects (Class<T> modelClass){
         String tableName = ModelInspector.resolveTableName(modelClass);
         SchemaGuard.ensureTableExistsOrThrow(tableName);
         return new QuerySet<>(modelClass, tableName, ModelInspector.getColumns(modelClass));
@@ -57,6 +62,42 @@ public abstract class Model {
 
     public <T extends Model> T setSequentiallyWithoutIgnoringPK(Object... values) {
         return privateSetSequentially(true, values);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Model> T getRelated(String fieldName) {
+        try {
+            Field fkField = this.getClass().getDeclaredField(fieldName);
+            fkField.setAccessible(true);
+            T value = (T) fkField.get(this);
+
+            if (value == null) {
+                Object fkId = proxyMap.get(fieldName);
+                if (fkId != null) {
+
+                    if (!Model.class.isAssignableFrom(fkField.getType())) {
+                        throw new IllegalArgumentException("Field " + fieldName + " is not a related model");
+                    }
+
+                    Class<T> type = (Class<T>) fkField.getType();
+
+                    List<T> related = Model.objects(type)
+                            .filter(Filter.eq(
+                                    ModelCache.pkUtilMap.get(type).pkName(),
+                                    fkId
+                            ));
+
+                    if (!related.isEmpty()) {
+                        value = related.getFirst();
+                        fkField.set(this, value); // cache it
+                    }
+                }
+            }
+            return value;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void dropTable(Class<? extends Model> clazz) {

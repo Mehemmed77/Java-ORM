@@ -20,11 +20,6 @@ public class Related {
         this.pkValue = getPrimaryKeyValue(instance);
     }
 
-    private void init(Class<? extends Model> clazz1, Class<? extends Model> clazz2) {
-        Model.objects(clazz1);
-        Model.objects(clazz2);
-    }
-
     public static Related of(Model instance) {
         if (instance == null) throw new IllegalArgumentException();
         return new Related(instance);

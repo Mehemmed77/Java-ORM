@@ -24,7 +24,7 @@ public class Article extends Model {
         return "Article{" +
                 "id=" + id +
                 ", content='" + content + '\'' +
-                ", author=" + author +
+                ", author=" + getRelated("author") +
                 '}';
     }
 }

@@ -95,6 +95,24 @@ public class GenerateSQLScripts {
         return selectStatement + filterToSql;
     }
 
+    public static String generateAliasColumns(String aliasName, List<Column> columns) {
+        return String.join(",", columns.stream().map(
+                column -> aliasName + "." + column.name() + " AS " + aliasName + "_" + column.name()
+        ).toList());
+    }
+
+    public static String generateJoinOnScript(
+            String referencingTableAlias,  // the table that has the FK (e.g., "article")
+            String fkColumnName,      // the FK column (e.g., "author_id")
+            String referencedTable,        // the FK target table name (e.g., "Author")
+            String referencedTableAlias,   // alias for the FK target (e.g., "author")
+            String referencedPkColumn      // PK column in the referenced table (e.g., "id")
+    ) {
+
+        return "JOIN " + referencedTable + " AS " + referencedTableAlias +
+                " ON " + referencingTableAlias + "." + fkColumnName + "=" + referencedTableAlias + "." + referencedPkColumn ;
+    }
+
     public static String generateExistsScript(String tableName, String filterToSql) {
         return "SELECT 1 FROM " + tableName + " WHERE " + filterToSql + " LIMIT 1";
     }

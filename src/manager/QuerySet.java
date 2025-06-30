@@ -1,4 +1,5 @@
 package manager;
+import annotations.Column;
 import annotations.ForeignKey;
 import core.Model;
 import core.ModelCache;
@@ -20,10 +21,10 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class QuerySet<T extends Model> {
-    private String tableName;
-    private Class<T> modelClass;
-    private List<ColumnInfo> columnInfos;
-    private Constructor<T> constructor;
+    private final String tableName;
+    private final Class<T> modelClass;
+    private final List<ColumnInfo> columnInfos;
+    private final Constructor<T> constructor;
 
     public QuerySet(Class<T> clazz, String tableName, List<ColumnInfo> columnInfos) {
         try{
@@ -66,6 +67,88 @@ public class QuerySet<T extends Model> {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    private List<Class<T>> findFieldRecursively(String fieldName, Class<T> clazz) {
+        try {
+            if (!fieldName.contains(".")) return new ArrayList<>(List.of( clazz,(Class<T>) clazz.getDeclaredField(fieldName).getType() ));
+
+            String[] parts = fieldName.split("\\.");
+            String head = parts[0];
+            Field field = clazz.getDeclaredField(head);
+            Class<T> type = (Class<T>) field.getType();
+
+            String tail = String.join(".", Arrays.copyOfRange(parts, 1, parts.length));
+            List<Class<T>> result = findFieldRecursively(tail, type);
+            result.add(clazz); // add the current FK holder
+
+            return result;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String selectRelated(String... fkFields) {
+        if (fkFields.length == 0) return "";
+
+        try {
+            StringBuilder selectColumns = new StringBuilder();
+            StringBuilder joinOnScript = new StringBuilder();
+
+            Set<String> seenAliases = new HashSet<>();
+
+            for (String fkField : fkFields) {
+                List<Class<T>> chainOfTables = findFieldRecursively(fkField, modelClass);
+
+                for (int i = 0; i < chainOfTables.size(); i++) {
+                    Class<T> clazz = chainOfTables.get(i);
+                    String tableAlias = ModelInspector.resolveTableName(clazz).toLowerCase();
+
+                    if (seenAliases.add(tableAlias)) {
+                        List<Column> columns = ModelInspector.getColumns(clazz).stream().map(ColumnInfo::column).toList();
+
+                        if (!selectColumns.isEmpty()) selectColumns.append(", ");
+                        selectColumns.append(GenerateSQLScripts.generateAliasColumns(tableAlias, columns));
+                    }
+
+                    if (i < chainOfTables.size() - 1) {
+                        Class<T> referencedClass = chainOfTables.get(i + 1);
+                        String referencedClassName = ModelInspector.resolveTableName(referencedClass);
+
+
+                        String fkColumnName = "";
+
+                        List<ColumnInfo> infos = ModelCache.foreignKeyMap.get(clazz);
+
+                        for(ColumnInfo info: infos) {
+                            if (info.foreignKey().reference().equals(referencedClass)) {
+                                fkColumnName = info.column().name();
+                            }
+                        }
+
+                        joinOnScript.append(
+                                GenerateSQLScripts.generateJoinOnScript(
+                                        tableAlias,
+                                        fkColumnName,
+                                        referencedClassName,
+                                        referencedClassName.toLowerCase(),
+                                        ModelCache.pkUtilMap.get(clazz).pkName()
+                                )
+                        ).append(" ");
+                    }
+                }
+            }
+
+            String baseTable = ModelInspector.resolveTableName(modelClass);
+            String baseAlias = baseTable.toLowerCase();
+
+            return "SELECT " + selectColumns + " FROM " + baseTable + " AS " + baseAlias + " " + joinOnScript;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public List<T> getAll() {
         List<T> rows = new ArrayList<>();
         String selectAllScript = GenerateSQLScripts.getAllRowsScript(this.tableName);
@@ -105,7 +188,7 @@ public class QuerySet<T extends Model> {
         if (results.isEmpty()) throw new GetReturnedLessThanOneRowException("Get returned 0 columns, must return exactly one. Use filter instead.");
         if (results.size() > 1) throw new GetReturnedMoreThanOneRowException("Get returned more than one column must return exactly one. Use filter instead.");
 
-        return hydrateSingleInstance(results.get(0));
+        return hydrateSingleInstance(results.getFirst());
     }
 
     public List<T> filter(Filter f) {

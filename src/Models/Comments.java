@@ -16,7 +16,7 @@ public class Comments extends Model {
     @Column(name = "comment", type = ColumnType.VARCHAR, length = 200)
     public String comment;
 
-    @ForeignKey(reference = Article.class, relatedName = "article")
+    @ForeignKey(reference = Article.class, relatedName = "comments")
     public Article article;
 
     @Override
@@ -24,7 +24,7 @@ public class Comments extends Model {
         return "Comments{" +
                 "id=" + id +
                 ", comment='" + comment + '\'' +
-                ", article=" + article +
+                ", article=" + getRelated("article") +
                 '}';
     }
 }

@@ -123,9 +123,7 @@ public class DatabaseManager {
                         stmt.setObject(i + 1, values.get(i));
                     }
 
-                    int affected = stmt.executeUpdate();
-
-                    return affected;
+                    return stmt.executeUpdate();
                 }
             }
         } catch (SQLException e) {

@@ -20,6 +20,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
+import static java.util.stream.Collectors.toList;
+
 public class QuerySet<T extends Model> {
     private final String tableName;
     private final Class<T> modelClass;
@@ -79,7 +81,7 @@ public class QuerySet<T extends Model> {
 
             String tail = String.join(".", Arrays.copyOfRange(parts, 1, parts.length));
             List<Class<T>> result = findFieldRecursively(tail, type);
-            result.add(clazz); // add the current FK holder
+            result.addFirst(clazz); // add the current FK holder
 
             return result;
 
@@ -88,61 +90,163 @@ public class QuerySet<T extends Model> {
         }
     }
 
-    public String selectRelated(String... fkFields) {
-        if (fkFields.length == 0) return "";
+    @SuppressWarnings("unchecked")
+    public List<Model> hydrateSelectRelatedInstance(List<Map<String, Object>> rows, List<Class<T>> tableHierarchy) {
+        // {article_id=1, article_author_id=1,
+        // article_content=A story of an old fisherman..., comments_id=1, author_id=1,
+        // author_authorName=Ernest Hemingway, comments_comment=Great article!,
+        // comments_article_id=1}
+
+        System.out.println(rows.size());
+
+        if (rows.isEmpty()) return null;
+
+        Map<Class<T>, List<String>> classToCols = new HashMap<>();
+        Map<Class<T>, Map<Object, Model>> caches = new HashMap<>();
+        Map<Class<T>, String> classToTableName = new HashMap<>();
+        Set<String> oneColInstance = rows.getFirst().keySet();
+
+        List<Model> result = new ArrayList<>();
+
+        for(Class<T> clazz: tableHierarchy) {
+            String tableName = ModelInspector.resolveTableName(clazz);
+            classToTableName.put(clazz, tableName.toLowerCase());
+            caches.put(clazz, new HashMap<>());
+//
+            List<String> filteredRows = oneColInstance.stream()
+                    .filter(colName -> colName.startsWith(tableName.toLowerCase() + "_"))
+                    .map(colName -> colName.substring(tableName.length() + 1)) // remove prefix and underscore
+                    .toList();
+//
+            classToCols.put(clazz, filteredRows);
+        }
+
+        for(Map<String, Object> row: rows) {
+            //
+            for (Class<T> clazz: tableHierarchy) {
+                List<String> cols = classToCols.get(clazz);
+
+                List<String> foreignKeyNames = ModelCache.foreignKeyMap.get(clazz).stream().
+                        map(info -> info.column().name()).toList();
+
+
+                Map<String, Object> singleModelData = new HashMap<>();
+                for(String col: cols) {
+                    if (foreignKeyNames.contains(col)) {
+                        Object pk = row.get(classToTableName.get(clazz) + "_" + col);
+
+                        Class<T> reference = null;
+
+                        var foreignKeys = ModelCache.foreignKeyMap.get(clazz);
+                        for(ColumnInfo info: foreignKeys) {
+                            if(info.column().name().equals(col)){
+                                reference = (Class<T>) info.foreignKey().reference();
+                                break;
+                            }
+                        }
+
+                        singleModelData.put(col, caches.get(reference).get(pk));
+                    }
+
+                    else{
+                        singleModelData.put(col, row.get(classToTableName.get(clazz) + "_" + col));
+                    }
+                }
+
+                Object pk = singleModelData.get(
+                        ModelCache.pkUtilMap.get(clazz).pkName()
+                );
+
+                System.out.println(clazz + " " + pk);
+
+                Model instance = caches.get(clazz).get(pk);
+                if (instance == null) {
+                    instance = hydrateOneModel(clazz, singleModelData);
+                    caches.get(clazz).put(pk, instance);
+                }
+            }
+        }
+
+        Class<T> rootClass = tableHierarchy.getLast();
+        return new ArrayList<>(caches.get(rootClass).values());
+    }
+
+    private Model hydrateOneModel(Class<T> clazz, Map<String,Object> data) {
+        try{
+            T instance = clazz.getDeclaredConstructor().newInstance();
+            for(ColumnInfo col : ModelInspector.getColumns(clazz)) {
+                Object value = data.get(col.column().name());
+                Field f = col.field();
+                f.setAccessible(true);
+                f.set(instance, value);
+            }
+
+            return instance;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<T> selectRelated(String fkField) {
+        if (fkField.isEmpty()) return null;
 
         try {
             StringBuilder selectColumns = new StringBuilder();
             StringBuilder joinOnScript = new StringBuilder();
 
             Set<String> seenAliases = new HashSet<>();
+            List<Class<T>> chainOfTables = findFieldRecursively(fkField, modelClass);
 
-            for (String fkField : fkFields) {
-                List<Class<T>> chainOfTables = findFieldRecursively(fkField, modelClass);
+            for (int i = 0; i < chainOfTables.size(); i++) {
+                Class<T> clazz = chainOfTables.get(i);
+                String tableAlias = ModelInspector.resolveTableName(clazz).toLowerCase();
 
-                for (int i = 0; i < chainOfTables.size(); i++) {
-                    Class<T> clazz = chainOfTables.get(i);
-                    String tableAlias = ModelInspector.resolveTableName(clazz).toLowerCase();
+                if (seenAliases.add(tableAlias)) {
+                    List<Column> columns = ModelInspector.getColumns(clazz).stream().map(ColumnInfo::column).toList();
 
-                    if (seenAliases.add(tableAlias)) {
-                        List<Column> columns = ModelInspector.getColumns(clazz).stream().map(ColumnInfo::column).toList();
+                    if (!selectColumns.isEmpty()) selectColumns.append(", ");
+                    selectColumns.append(GenerateSQLScripts.generateAliasColumns(tableAlias, columns));
+                }
 
-                        if (!selectColumns.isEmpty()) selectColumns.append(", ");
-                        selectColumns.append(GenerateSQLScripts.generateAliasColumns(tableAlias, columns));
-                    }
-
-                    if (i < chainOfTables.size() - 1) {
-                        Class<T> referencedClass = chainOfTables.get(i + 1);
-                        String referencedClassName = ModelInspector.resolveTableName(referencedClass);
+                if (i < chainOfTables.size() - 1) {
+                    Class<T> referencedClass = chainOfTables.get(i + 1);
+                    String referencedClassName = ModelInspector.resolveTableName(referencedClass);
 
 
-                        String fkColumnName = "";
+                    String fkColumnName = "";
 
-                        List<ColumnInfo> infos = ModelCache.foreignKeyMap.get(clazz);
+                    List<ColumnInfo> infos = ModelCache.foreignKeyMap.get(clazz);
 
-                        for(ColumnInfo info: infos) {
-                            if (info.foreignKey().reference().equals(referencedClass)) {
-                                fkColumnName = info.column().name();
-                            }
+                    for(ColumnInfo info: infos) {
+                        if (info.foreignKey().reference().equals(referencedClass)) {
+                            fkColumnName = info.column().name();
                         }
-
-                        joinOnScript.append(
-                                GenerateSQLScripts.generateJoinOnScript(
-                                        tableAlias,
-                                        fkColumnName,
-                                        referencedClassName,
-                                        referencedClassName.toLowerCase(),
-                                        ModelCache.pkUtilMap.get(clazz).pkName()
-                                )
-                        ).append(" ");
                     }
+
+                    joinOnScript.append(
+                            GenerateSQLScripts.generateJoinOnScript(
+                                    tableAlias,
+                                    fkColumnName,
+                                    referencedClassName,
+                                    referencedClassName.toLowerCase(),
+                                    ModelCache.pkUtilMap.get(clazz).pkName()
+                            )
+                    ).append(" ");
                 }
             }
 
             String baseTable = ModelInspector.resolveTableName(modelClass);
             String baseAlias = baseTable.toLowerCase();
 
-            return "SELECT " + selectColumns + " FROM " + baseTable + " AS " + baseAlias + " " + joinOnScript;
+            String script = "SELECT " + selectColumns + " FROM " + baseTable + " AS " + baseAlias + " " + joinOnScript;
+            System.out.println(script);
+            List<Map<String, Object>> data = DatabaseManager.getInstance().executeSelectQuery(script, null);
+
+            hydrateSelectRelatedInstance(data, chainOfTables.reversed());
+
+            return (List<T>) hydrateSelectRelatedInstance(data, chainOfTables.reversed());
         }
         catch (Exception e) {
             throw new RuntimeException(e);

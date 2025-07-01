@@ -35,7 +35,8 @@ public class ModelParser {
             if (!field.isAnnotationPresent(ForeignKey.class) && field.isAnnotationPresent(Column.class)) {
                 Column column = field.getAnnotation(Column.class);
 
-                if(field.isAnnotationPresent(PrimaryKey.class)) ModelCache.pkUtilMap.put(clazz, new PrimaryKeyUtils(field, column.name(), -1));
+                if(field.isAnnotationPresent(PrimaryKey.class)) ModelCache.pkUtilMap.put(clazz, new PrimaryKeyUtils(field, column.name(), -1,
+                        resolveTableName(clazz).toLowerCase() + "_" + column.name()));
                 found = true;
                 break;
             }
@@ -93,7 +94,8 @@ public class ModelParser {
 
                     primaryKeyExists = true;
 
-                    pkUtil = new PrimaryKeyUtils(field, column.name(), idx + 1);
+                    pkUtil = new PrimaryKeyUtils(field, column.name(), idx + 1,
+                            resolveTableName(clazz).toLowerCase() + "_" + column.name());
                 }
 
                 if (column.type() == ColumnType.TIMESTAMP) {

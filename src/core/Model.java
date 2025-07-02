@@ -37,18 +37,22 @@ public abstract class Model {
     private <T extends Model> T privateSetSequentially(boolean includePk, Object... values) {
         List<ColumnInfo> columnInfos = ModelInspector.getColumns(this.getClass());
 
-        int idx = 0;
+        if (!includePk) {
+            columnInfos = columnInfos.stream().
+                filter(info -> !info.field().isAnnotationPresent(PrimaryKey.class)).toList();
+        }
+
         try{
-            for(ColumnInfo columnInfo: columnInfos) {
-                if (idx > values.length || values.length == 0) break;
 
-                Field field = columnInfo.field();
-                if (!includePk && field.isAnnotationPresent(PrimaryKey.class)) continue;
+            for(int i = 0; i < values.length; i++) {
+                 ColumnInfo info = columnInfos.get(i);
 
-                field.setAccessible(true);
-                field.set(this, values[idx]);
-                idx++;
+                 Field field = info.field();
+
+                 field.setAccessible(true);
+                 field.set(this, values[i]);
             }
+
         } catch (IllegalAccessException e) {
             throw new RuntimeException("No such field: ", e);
         }

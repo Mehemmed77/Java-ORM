@@ -24,7 +24,7 @@ public class Comments extends Model {
         return "Comments{" +
                 "id=" + id +
                 ", comment='" + comment + '\'' +
-                ", article=" + getRelated("article") +
+                ", article=" + article+
                 '}';
     }
 }

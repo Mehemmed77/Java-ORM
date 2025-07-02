@@ -12,7 +12,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         ORM.init();
-        List<Comments> comments = Model.objects(Comments.class).selectRelated("article.author");
-        System.out.println(comments.size());
+
+        Model.objects(Author.class).prefetchRelated("");
+
     }
 }

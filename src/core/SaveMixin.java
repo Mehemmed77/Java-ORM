@@ -59,8 +59,12 @@ public abstract class SaveMixin {
                         ForeignKey fk = info.foreignKey();
                         Model referencedTableInstance = (Model) field.get(instance);
 
-                        Field referencedTablePKField = ModelInspector.getPkUtil(fk.reference()).pkField();
-                        columnToValues.put(column.name(), referencedTablePKField.get(referencedTableInstance));
+                        if (referencedTableInstance == null) columnToValues.put(column.name(), null);
+
+                        else{
+                            Field referencedTablePKField = ModelInspector.getPkUtil(fk.reference()).pkField();
+                            columnToValues.put(column.name(), referencedTablePKField.get(referencedTableInstance));
+                        }
                     }
 
                     else{

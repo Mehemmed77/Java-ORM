@@ -1,4 +1,6 @@
 package manager;
+import Models.Article;
+import Models.Author;
 import annotations.Column;
 import annotations.ForeignKey;
 import core.Model;
@@ -90,14 +92,18 @@ public class QuerySet<T extends Model> {
         }
     }
 
+    public List<T> prefetchRelated(String fieldName) {
+        System.out.println(ModelCache.relatedModels.get(modelClass));
+
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     public List<Model> hydrateSelectRelatedInstance(List<Map<String, Object>> rows, List<Class<T>> tableHierarchy) {
         // {article_id=1, article_author_id=1,
         // article_content=A story of an old fisherman..., comments_id=1, author_id=1,
         // author_authorName=Ernest Hemingway, comments_comment=Great article!,
         // comments_article_id=1}
-
-        System.out.println(rows.size());
 
         if (rows.isEmpty()) return null;
 
@@ -156,8 +162,6 @@ public class QuerySet<T extends Model> {
                 Object pk = singleModelData.get(
                         ModelCache.pkUtilMap.get(clazz).pkName()
                 );
-
-                System.out.println(clazz + " " + pk);
 
                 Model instance = caches.get(clazz).get(pk);
                 if (instance == null) {

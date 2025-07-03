@@ -13,7 +13,7 @@ public class Main {
     public static void main(String[] args) {
         ORM.init();
 
-        Model.objects(Author.class).prefetchRelated("");
+        Model.objects(Author.class).prefetchRelated("article_set");
 
     }
 }

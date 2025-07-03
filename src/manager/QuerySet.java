@@ -12,6 +12,7 @@ import customErrors.NullFilterException;
 import database.DatabaseManager;
 import filters.Filter;
 import metadata.ColumnInfo;
+import metadata.RelationMeta;
 import utils.GenerateSQLScripts;
 import utils.TimeStampManager;
 import validators.ValueValidator;
@@ -21,6 +22,7 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -43,7 +45,7 @@ public class QuerySet<T extends Model> {
         }
     }
 
-    private T hydrateSingleInstance(Map<String, Object> data) {
+    public T hydrateSingleInstance(Map<String, Object> data) {
         try {
             T instance = constructor.newInstance();
 
@@ -54,8 +56,12 @@ public class QuerySet<T extends Model> {
                 Object value = data.get(columnName);
 
                 if (field.isAnnotationPresent(ForeignKey.class)) {
-                    field.set(instance, null);
-                    instance.proxyMap.put(field.getName(), value);
+                    if (value instanceof Model) field.set(instance, value);
+
+                    else{
+                        field.set(instance, null);
+                        instance.proxyMap.put(field.getName(), value);
+                    }
                     continue;
                 }
 
@@ -92,8 +98,50 @@ public class QuerySet<T extends Model> {
         }
     }
 
-    public List<T> prefetchRelated(String fieldName) {
-        System.out.println(ModelCache.relatedModels.get(modelClass));
+    public List<T> prefetchRelated(String relatedName) {
+        List<RelationMeta> relationMetas = ModelCache.relatedModels.get(modelClass);
+
+        for(RelationMeta relationMeta: relationMetas) {
+            if (relationMeta.relatedName().equals(relatedName)) {
+                Class<? extends Model> referencingModel = relationMeta.referencingModel();
+
+                String referencingModelTableName = ModelInspector.resolveTableName(referencingModel);
+                List<Column> referencingModelColumns = ModelInspector.getColumns(referencingModel).stream().map(ColumnInfo::column).toList();
+                String referencingModelAliasColumnsScript = GenerateSQLScripts.generateAliasColumns(
+                        referencingModelTableName.toLowerCase(),
+                        referencingModelColumns
+                );
+
+                String modelTableName = ModelInspector.resolveTableName(modelClass);
+                List<Column> modelColumns = ModelInspector.getColumns(modelClass).stream().map(ColumnInfo::column).toList();
+
+                String modelAliasColumnsScript = GenerateSQLScripts.generateAliasColumns(
+                        modelTableName.toLowerCase(),
+                        modelColumns
+                );
+
+                String joinOnScript =
+                        GenerateSQLScripts.generateJoinOnScript(
+                                referencingModelTableName,
+                                relationMeta.referencingFieldName(),
+                                modelTableName,
+                                modelTableName.toLowerCase(),
+                                ModelCache.pkUtilMap.get(modelClass).pkName()
+                        );
+
+                String resultScript = "SELECT " +
+                        referencingModelAliasColumnsScript + "," +
+                        modelAliasColumnsScript + " FROM " + referencingModelTableName +
+                        " AS " + referencingModelTableName.toLowerCase() + " " + joinOnScript;
+
+
+                List<Map<String, Object>> rows = DatabaseManager.getInstance().executeSelectQuery(
+                        resultScript, null
+                );
+
+                Related.fillCache(rows, relationMeta.referencingFieldName(), modelClass, referencingModel);
+            }
+        }
 
         return null;
     }
@@ -110,9 +158,7 @@ public class QuerySet<T extends Model> {
         Map<Class<T>, List<String>> classToCols = new HashMap<>();
         Map<Class<T>, Map<Object, Model>> caches = new HashMap<>();
         Map<Class<T>, String> classToTableName = new HashMap<>();
-        Set<String> oneColInstance = rows.getFirst().keySet();
-
-        List<Model> result = new ArrayList<>();
+        List<String> oneColInstance = rows.getFirst().keySet().stream().toList();
 
         for(Class<T> clazz: tableHierarchy) {
             String tableName = ModelInspector.resolveTableName(clazz);

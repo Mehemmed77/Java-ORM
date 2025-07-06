@@ -1,14 +1,13 @@
 package core;
-import annotations.Column;
-import annotations.PrimaryKey;
-import filters.Filter;
-import manager.QuerySet;
-import metadata.ColumnInfo;
-
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import annotations.PrimaryKey;
+import filters.Filter;
+import manager.QuerySet;
+import metadata.ColumnInfo;
 
 public abstract class Model {
     public Map<String, Object> proxyMap = new HashMap<>();
@@ -23,10 +22,10 @@ public abstract class Model {
     public <T extends Model> T set(String fieldName, Object value) {
         try {
             Field field = this.getClass().getDeclaredField(fieldName);
-            Column column = field.getAnnotation(Column.class);
             field.setAccessible(true);
             field.set(this, value);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        }
+        catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException("No such field: " + fieldName, e);
         }
 

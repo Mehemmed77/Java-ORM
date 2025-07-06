@@ -1,6 +1,18 @@
 package manager;
-import Models.Article;
-import Models.Author;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import annotations.Column;
 import annotations.ForeignKey;
 import core.Model;
@@ -16,15 +28,6 @@ import metadata.RelationMeta;
 import utils.GenerateSQLScripts;
 import utils.TimeStampManager;
 import validators.ValueValidator;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 public class QuerySet<T extends Model> {
     private final String tableName;
@@ -98,6 +101,7 @@ public class QuerySet<T extends Model> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<T> prefetchRelated(String relatedName) {
         List<RelationMeta> relationMetas = ModelCache.relatedModels.get(modelClass);
 
@@ -139,7 +143,7 @@ public class QuerySet<T extends Model> {
                         resultScript, null
                 );
 
-                Related.fillCache(rows, relationMeta.referencingFieldName(), modelClass, referencingModel);
+                return (List<T>) Related.fillCache(rows, relationMeta.referencingFieldName(), modelClass, referencingModel);
             }
         }
 

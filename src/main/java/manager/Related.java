@@ -1,22 +1,22 @@
 package manager;
 
-import core.Model;
-import core.ModelCache;
-import core.ModelInspector;
-import filters.Filter;
-import metadata.RelationMeta;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import core.Model;
+import core.ModelCache;
+import core.ModelInspector;
+import filters.Filter;
+import metadata.RelationMeta;
+
 public class Related {
     private final Model instance;
     private final Class<? extends Model> instanceClass;
     private final Object pkValue;
-    public static final Map<Class<? extends Model>, Map<String, List<Model>>> cache = new HashMap<>();
+    public static final Map<Class<? extends Model>, Map<Model, List<Model>>> cache = new HashMap<>();
 
     private Related(Model instance) {
         this.instance = instance;
@@ -40,7 +40,7 @@ public class Related {
         return result;
     }
 
-    public static void fillCache(List<Map<String, Object>> rows,
+    public static List<Model> fillCache(List<Map<String, Object>> rows,
                                  String fkName,
                                  Class<? extends Model> referencedModel,
                                  Class<? extends Model> referencingModel) {
@@ -48,8 +48,6 @@ public class Related {
         List<Model> result = new ArrayList<>();
 
         if (!cache.containsKey(referencedModel)) cache.put(referencedModel, new HashMap<>());
-
-        if(!cache.get(referencedModel).containsKey(fkName)) cache.get(referencedModel).put(fkName, new ArrayList<>());
 
         for (Map<String, Object> row: rows) {
             try {
@@ -63,18 +61,33 @@ public class Related {
 
                 Model referencingModelInstance = Model.objects(referencingModel).
                         hydrateSingleInstance(referencingModelMap);
-
-
+                
+                if(!cache.get(referencedModel).containsKey(referencedModelInstance)) {
+                    cache.get(referencedModel).put(referencedModelInstance, new ArrayList<>());
+                }
+    
+                cache.get(referencedModel).get(referencedModelInstance).add(referencingModelInstance);    
 
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Model> List<T> returnCacheOrNull() {
+        List<Model> cachedValue = Related.cache.get(instanceClass).getOrDefault(instance, new ArrayList<>());
+
+        return (List<T>) cachedValue;
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Model> List<T> get(Class<T> relatedModelClass) {
+        List<T> cached = returnCacheOrNull();
+        if(cached != null) return cached;
+
         List<RelationMeta> relations = ModelCache.relatedModels.getOrDefault(instanceClass, List.of());
 
         if (relations.isEmpty()) throw new IllegalArgumentException(instanceClass.getSimpleName() + " has no relation with any model.");
@@ -96,7 +109,10 @@ public class Related {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> List<T> get(String relatedName) {
+    public <T extends Model> List<T> get(String relatedName) {
+        List<T> cached = returnCacheOrNull();
+        if(cached != null) return cached;
+
         List<RelationMeta> relations = ModelCache.relatedModels.getOrDefault(instanceClass, List.of());
 
         if (relations.isEmpty()) throw new IllegalArgumentException(instanceClass.getSimpleName() + " has no relation with any model.");

@@ -1,0 +1,116 @@
+package migrationManager;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.reflections.Reflections;
+
+import annotations.Column;
+import annotations.ForeignKey;
+import annotations.Table;
+import core.Model;
+import core.ModelInspector;
+
+public class MigrationManager {
+
+    /**
+     * Entry point to load all model classes in the `models` package.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Class<? extends Model>> loadModels() {
+        Reflections reflections = new Reflections("models");
+
+        Set<Class<?>> rawModels = reflections.getTypesAnnotatedWith(Table.class);
+
+        List<Class<? extends Model>> models = rawModels.stream().filter(clz -> Model.class.isAssignableFrom(clz))
+        .map(clz -> (Class<? extends Model>) clz).collect(Collectors.toList());
+
+        return models;
+    }
+
+     /**
+     * Parse a single model class.
+     * - Extract @Table, @Column, @PrimaryKey, @ForeignKey, etc.
+     * - Build a representation you can serialize for migrations.
+     */
+
+    public Map<String, Object> parseModel(Class<? extends Model> modelClass) {
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("tableName", ModelInspector.resolveTableName(modelClass));
+
+        Field[] fields = modelClass.getDeclaredFields();
+        List<Map<String, Object>> columns = new ArrayList<>();
+        List<Map<String, Object>> getters = new ArrayList<>();
+        
+        for(Field field: fields) {
+            if(field.isAnnotationPresent(Column.class)) columns.add(ColumnParser.parse(field));
+            if(field.isAnnotationPresent(ForeignKey.class)) columns.add(ColumnParser.parseFK(field));
+
+            if(!hasGetter(modelClass, field)) getters.add(makeGetter(field));
+        }
+
+        if (!hasToString(modelClass)) {
+            map.put("toString", generateToString(modelClass.getSimpleName(), modelClass.getDeclaredFields()));
+        }
+
+        map.put("columns", columns);
+        map.put("getters", getters);
+
+        return map;
+    }
+
+    public String capitalizeString(String s) {
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    private Map<String, Object> makeGetter(Field field) {
+        Map<String, Object> map = new HashMap<>();
+
+        String typeName = field.getType().getName();
+
+        map.put("getterName", "get" + capitalizeString(field.getName()));
+        map.put("returnType", typeName);
+        map.put("returnValue", "this." + field.getName());
+        
+        return map;
+    }
+
+    private boolean hasNoArgConstructor(Class<? extends Model> modelClass) {
+        return Arrays.stream(modelClass.getDeclaredConstructors())
+                .anyMatch(constructor -> constructor.getParameterCount() == 0);
+    }
+
+    private boolean hasToString(Class<? extends Model> modelClass) {
+        List<Method> methods = Arrays.asList(modelClass.getMethods());
+        List<String> methodNames = methods.stream().map(method -> method.getName()).toList();
+
+        return methodNames.contains("toString");
+    }
+
+    public String generateToString(String className, Field[] fields) {
+        String toStringBody = Arrays.stream(fields)
+            .map(f -> f.getName() + "=" + "this." + f.getName())
+            .collect(Collectors.joining(", "));
+
+        return "return \"" + className + "{\" + " + toStringBody + " + \"}\";";
+    }
+
+    public boolean hasGetter(Class<? extends Model> modelClass, Field field) {
+        Method[] methods = modelClass.getMethods();
+
+        for(Method method: methods) {
+            if (method.getName().equals("get" + capitalizeString(field.getName()))) return true;
+        }
+
+        return false;
+    }
+
+}

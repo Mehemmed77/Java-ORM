@@ -19,6 +19,14 @@ public class Article extends Model {
     @ForeignKey(reference = Author.class)
     public Author author;
 
+    public Author getAuthor() {
+        return getRelated("author");
+    }
+
+    public String getContent(){
+        return this.content;
+    }
+
     @Override
     public String toString() {
         return "Article{" +

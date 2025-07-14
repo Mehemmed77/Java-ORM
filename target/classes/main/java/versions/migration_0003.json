@@ -1,0 +1,141 @@
+[ {
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "id",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "name",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "email",
+    "primaryKey" : false
+  }, {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "age",
+    "primaryKey" : false
+  } ],
+  "toString" : "return \"Users{ id=this.id, name=this.name, email=this.email, age=this.age}",
+  "MIGRATION_ID" : "71804650-f456-49ec-97d3-14e32457ff97",
+  "getters" : [ {
+    "returnValue" : "this.id",
+    "getterName" : "getId",
+    "returnType" : "int"
+  }, {
+    "returnValue" : "this.name",
+    "getterName" : "getName",
+    "returnType" : "java.lang.String"
+  }, {
+    "returnValue" : "this.email",
+    "getterName" : "getEmail",
+    "returnType" : "java.lang.String"
+  }, {
+    "returnValue" : "this.age",
+    "getterName" : "getAge",
+    "returnType" : "java.lang.Integer"
+  } ],
+  "tableName" : "Users"
+}, {
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "TEXT",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "content",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "",
+    "nullable" : true,
+    "referencedModel" : "Models.Author",
+    "onUpdate" : "CASCADE"
+  } ],
+  "toString" : "return \"Article{ id=this.id, content=this.content, author=this.getRelated(author)}",
+  "MIGRATION_ID" : "d666e4c7-b77e-4acf-b145-389c6045c970",
+  "getters" : [ {
+    "returnValue" : "this.id",
+    "getterName" : "getId",
+    "returnType" : "int"
+  } ],
+  "tableName" : "Article"
+}, {
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : true,
+    "length" : 30,
+    "columnName" : "authorName",
+    "primaryKey" : false
+  } ],
+  "toString" : "return \"Author{ id=this.id, authorName=this.authorName}",
+  "MIGRATION_ID" : "a43b52c2-0b08-4fd3-b4c3-b4db696cacae",
+  "getters" : [ {
+    "returnValue" : "this.id",
+    "getterName" : "getId",
+    "returnType" : "int"
+  }, {
+    "returnValue" : "this.authorName",
+    "getterName" : "getAuthorName",
+    "returnType" : "java.lang.String"
+  } ],
+  "tableName" : "Author"
+}, {
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 200,
+    "columnName" : "comment",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "comments",
+    "nullable" : true,
+    "referencedModel" : "Models.Article",
+    "onUpdate" : "CASCADE"
+  } ],
+  "MIGRATION_ID" : "d4c93937-0873-458f-b34d-40d82cf826ad",
+  "getters" : [ {
+    "returnValue" : "this.id",
+    "getterName" : "getId",
+    "returnType" : "int"
+  }, {
+    "returnValue" : "this.comment",
+    "getterName" : "getComment",
+    "returnType" : "java.lang.String"
+  }, {
+    "returnValue" : "this.article",
+    "getterName" : "getArticle",
+    "returnType" : "Models.Article"
+  } ],
+  "tableName" : "Comments"
+} ]

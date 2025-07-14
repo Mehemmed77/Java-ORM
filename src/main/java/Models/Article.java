@@ -26,13 +26,4 @@ public class Article extends Model {
     public String getContent(){
         return this.content;
     }
-
-    @Override
-    public String toString() {
-        return "Article{" +
-                "id=" + id +
-                ", content='" + content + '\'' +
-                ", author=" + author +
-                '}';
-    }
 }

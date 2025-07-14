@@ -17,9 +17,4 @@ public class Users extends Model {
 
     @Column(name = "age", type = ColumnType.INTEGER, nullable = true)
     public Integer age;
-
-    @Override
-    public String toString() {
-        return "User: " + name + " " + email + " " + age;
-    }
 }

@@ -2,12 +2,7 @@ package migrationManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.reflections.Reflections;
@@ -25,11 +20,11 @@ public class MigrationManager {
      */
     @SuppressWarnings("unchecked")
     public List<Class<? extends Model>> loadModels() {
-        Reflections reflections = new Reflections("models");
+        Reflections reflections = new Reflections("Models");
 
         Set<Class<?>> rawModels = reflections.getTypesAnnotatedWith(Table.class);
 
-        List<Class<? extends Model>> models = rawModels.stream().filter(clz -> Model.class.isAssignableFrom(clz))
+        List<Class<? extends Model>> models = rawModels.stream().filter(Model.class::isAssignableFrom)
         .map(clz -> (Class<? extends Model>) clz).collect(Collectors.toList());
 
         return models;
@@ -41,10 +36,24 @@ public class MigrationManager {
      * - Build a representation you can serialize for migrations.
      */
 
-    public Map<String, Object> parseModel(Class<? extends Model> modelClass) {
-        Map<String, Object> map = new HashMap<>();
+     private String getMigrationID(Class<? extends Model> clazz) {
+         try {
+             Field field = clazz.getDeclaredField("MIGRATION_ID");
+             return (String) field.get(null);
+         } catch (NoSuchFieldException | IllegalAccessException e) {
+             return null;
+         }
+     }
+
+    public LinkedHashMap<String, Object> parseModel(Class<? extends Model> modelClass) {
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+
+        String migrationID = getMigrationID(modelClass);
 
         map.put("tableName", ModelInspector.resolveTableName(modelClass));
+
+        if(getMigrationID(modelClass) == null) map.put("MIGRATION_ID", UUID.randomUUID().toString());
+        else map.put("MIGRATION_ID", migrationID);
 
         Field[] fields = modelClass.getDeclaredFields();
         List<Map<String, Object>> columns = new ArrayList<>();
@@ -89,18 +98,22 @@ public class MigrationManager {
     }
 
     private boolean hasToString(Class<? extends Model> modelClass) {
-        List<Method> methods = Arrays.asList(modelClass.getMethods());
-        List<String> methodNames = methods.stream().map(method -> method.getName()).toList();
-
+        List<Method> methods = Arrays.asList(modelClass.getDeclaredMethods());
+        String methodNames = String.join(" ", methods.stream().map(Method::getName).toList());
         return methodNames.contains("toString");
     }
 
     public String generateToString(String className, Field[] fields) {
         String toStringBody = Arrays.stream(fields)
-            .map(f -> f.getName() + "=" + "this." + f.getName())
+            .map(f -> {
+                if(f.isAnnotationPresent(ForeignKey.class)) {
+                    return f.getName() + "=" + "this.getRelated(" + f.getName() + ")";
+                }
+                return f.getName() + "=" + "this." + f.getName();
+            })
             .collect(Collectors.joining(", "));
 
-        return "return \"" + className + "{\" + " + toStringBody + " + \"}\";";
+        return "return \"" + className + "{ " + toStringBody + "}";
     }
 
     public boolean hasGetter(Class<? extends Model> modelClass, Field field) {

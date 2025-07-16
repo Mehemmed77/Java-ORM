@@ -17,4 +17,21 @@ public class Users extends Model {
 
     @Column(name = "age", type = ColumnType.INTEGER, nullable = true)
     public Integer age;
+
+    public int getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public Integer getAge() {
+        return this.age;
+    }
+
 }

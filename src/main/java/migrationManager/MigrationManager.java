@@ -14,7 +14,6 @@ import core.Model;
 import core.ModelInspector;
 
 public class MigrationManager {
-
     /**
      * Entry point to load all model classes in the `models` package.
      */
@@ -50,6 +49,7 @@ public class MigrationManager {
 
         String migrationID = getMigrationID(modelClass);
 
+        map.put("modelName", modelClass.getSimpleName());
         map.put("tableName", ModelInspector.resolveTableName(modelClass));
 
         if(getMigrationID(modelClass) == null) map.put("MIGRATION_ID", UUID.randomUUID().toString());
@@ -67,7 +67,7 @@ public class MigrationManager {
         }
 
         if (!hasToString(modelClass)) {
-            map.put("toString", generateToString(modelClass.getSimpleName(), modelClass.getDeclaredFields()));
+            map.put("TOString", generateToString(modelClass.getSimpleName(), modelClass.getDeclaredFields()));
         }
 
         map.put("columns", columns);
@@ -83,7 +83,7 @@ public class MigrationManager {
     private Map<String, Object> makeGetter(Field field) {
         Map<String, Object> map = new HashMap<>();
 
-        String typeName = field.getType().getName();
+        String typeName = Arrays.asList(field.getType().getName().split("\\.")).getLast();
 
         map.put("getterName", "get" + capitalizeString(field.getName()));
         map.put("returnType", typeName);

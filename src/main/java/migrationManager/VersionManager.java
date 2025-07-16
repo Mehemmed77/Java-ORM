@@ -11,6 +11,24 @@ public class VersionManager {
 
     private static File latestFile;
 
+    public static String getLatestMigrationFileName() {
+        Path path = Paths.get(ROOT_PATH);
+        File folder = path.toFile();
+
+        File[] files = folder.listFiles((_, name) -> name.startsWith("migration") && name.endsWith(".json"));
+
+        if(files == null || files.length == 0) return "migration_0001.json";
+
+        Arrays.sort(files, Comparator.comparing(File::getName));
+
+        File lastFile = files[files.length - 1];
+        String lastNumStr = lastFile.getName().substring(10, 14); // "0001"
+        int nextNum = Integer.parseInt(lastNumStr) + 1;
+
+        String nextNumStr = String.format("%04d", nextNum); // always 4-digit padded
+        return "migration_" + nextNumStr + ".json";
+    }
+
     public static void generateNextMigrationFile() {
         Path path = Paths.get(ROOT_PATH);
 
@@ -24,22 +42,8 @@ public class VersionManager {
         }
 
         File folder = path.toFile();
-        File[] files = folder.listFiles((dir, name) -> name.startsWith("migration") && name.endsWith(".json"));
 
-        String newFileName;
-
-        if(files == null || files.length == 0) newFileName = "migration_0001.json";
-
-        else{
-            Arrays.sort(files, Comparator.comparing(File::getName));
-
-            File lastFile = files[files.length - 1];
-            String lastNumStr = lastFile.getName().substring(10, 14); // "0001"
-            int nextNum = Integer.parseInt(lastNumStr) + 1;
-
-            String nextNumStr = String.format("%04d", nextNum); // always 4-digit padded
-            newFileName = "migration_" + nextNumStr + ".json";
-        }
+        String newFileName = getLatestMigrationFileName();
 
         try {
             File newFile = new File(folder, newFileName);
@@ -59,5 +63,6 @@ public class VersionManager {
         if(latestFile == null) return;
 
         WriterManager.write(parsedModels, latestFile);
+        WriterManager.getterWriter(parsedModels);
     }
 }

@@ -14,4 +14,13 @@ public class Author extends Model {
 
     @Column(name="authorName", type = ColumnType.VARCHAR, length = 30, unique = true)
     public String authorName;
+
+    public int getId() {
+        return this.id;
+    }
+
+    public String getAuthorName() {
+        return this.authorName;
+    }
+
 }

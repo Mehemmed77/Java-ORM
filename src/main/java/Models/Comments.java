@@ -27,4 +27,17 @@ public class Comments extends Model {
                 ", article=" + article+
                 '}';
     }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public String getComment() {
+        return this.comment;
+    }
+
+    public Article getArticle() {
+        return this.article;
+    }
+
 }

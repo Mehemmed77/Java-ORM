@@ -26,4 +26,9 @@ public class Article extends Model {
     public String getContent(){
         return this.content;
     }
+
+    public int getId() {
+        return this.id;
+    }
+
 }

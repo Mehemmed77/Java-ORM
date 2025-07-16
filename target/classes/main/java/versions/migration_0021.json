@@ -1,0 +1,110 @@
+[ {
+  "modelName" : "Users",
+  "tableName" : "Users",
+  "MIGRATION_ID" : "ba2332c8-72d9-4611-8d28-2fc86514ea6b",
+  "TOString" : "Users{ id=\" + id + \", name=\" + name + \", email=\" + email + \", age=\" + age + \"}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "id",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "name",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "email",
+    "primaryKey" : false
+  }, {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "age",
+    "primaryKey" : false
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Article",
+  "tableName" : "Article",
+  "MIGRATION_ID" : "6da4b598-f441-45bb-b399-df589f67253e",
+  "TOString" : "Article{ id=\" + id + \", content=\" + content + \", author=\" + getRelated(\\\"author\\\") + \"}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "TEXT",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "content",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "",
+    "nullable" : true,
+    "referencedModel" : "Models.Author",
+    "onUpdate" : "CASCADE"
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Author",
+  "tableName" : "Author",
+  "MIGRATION_ID" : "82d2fa5d-dff3-451c-b809-85e70c128ea4",
+  "TOString" : "Author{ id=\" + id + \", authorName=\" + authorName + \"}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : true,
+    "length" : 30,
+    "columnName" : "authorName",
+    "primaryKey" : false
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Comments",
+  "tableName" : "Comments",
+  "MIGRATION_ID" : "f850477f-d054-4960-a098-00f2c531c551",
+  "TOString" : "Comments{ id=\" + id + \", comment=\" + comment + \", article=\" + getRelated(\\\"article\\\") + \"}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 200,
+    "columnName" : "comment",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "comments",
+    "nullable" : true,
+    "referencedModel" : "Models.Article",
+    "onUpdate" : "CASCADE"
+  } ],
+  "getters" : [ ]
+} ]

@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,14 @@ public class WriterManager {
         }
     }
 
-    public static void getterWriter(List<LinkedHashMap<String, Object>> snapshot) {
+    public static String generateNoArgConstructorString(String modelName) {
+        String indent = "    ";
+        return String.format("""
+                %spublic %s() {}
+                """,indent, modelName);
+    }
+
+    public static void boilerPlateCodeWriter(List<LinkedHashMap<String, Object>> snapshot) {
         Path path = Paths.get(MODEL_PATH);
         File folder = path.toFile();
         File[] files = folder.listFiles();
@@ -43,8 +49,19 @@ public class WriterManager {
                         getterString.append(generateGetterString(map)).append("\n");
                     }
 
+                    if((boolean) data.get("noArgConstructor")) {
+                        writeString(
+                                generateNoArgConstructorString((String) data.get("modelName")),
+                                file.getPath()
+                        );
+                    }
+
                     if (!getterString.isEmpty()) {
-                        writeGetterString(getterString.toString(), file.getPath());
+                        writeString(getterString.toString(), file.getPath());
+                    }
+
+                    if (data.containsKey("TOString")) {
+                        writeString((String) data.get("TOString"), file.getPath());
                     }
 
                     break;
@@ -53,14 +70,14 @@ public class WriterManager {
         }
     }
 
-    public static void writeGetterString(String getterString, String filePath) {
+    public static void writeString(String codeToWrite, String filePath) {
         try {
             Path path = Paths.get(filePath);
             String code = Files.readString(path);
 
             int insertIndex = code.lastIndexOf('}');
 
-            String newCode = code.substring(0, insertIndex) + getterString + "\n}";
+            String newCode = code.substring(0, insertIndex) + codeToWrite + "\n}";
             Files.writeString(path, newCode);
 
         } catch (IOException e) {

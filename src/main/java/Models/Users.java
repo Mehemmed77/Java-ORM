@@ -33,5 +33,8 @@ public class Users extends Model {
     public Integer getAge() {
         return this.age;
     }
-
+@Override
+public String toString() {
+    return "Users{ id=" + id + ", name=" + name + ", email=" + email + ", age=" + age + "}";
+}
 }

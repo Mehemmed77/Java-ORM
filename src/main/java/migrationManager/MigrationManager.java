@@ -70,6 +70,7 @@ public class MigrationManager {
             map.put("TOString", generateToString(modelClass.getSimpleName(), modelClass.getDeclaredFields()));
         }
 
+        map.put("noArgConstructor", !hasNoArgConstructor(modelClass));
         map.put("columns", columns);
         map.put("getters", getters);
 
@@ -105,16 +106,23 @@ public class MigrationManager {
 
     public String generateToString(String className, Field[] fields) {
         String toStringBody = Arrays.stream(fields)
-            .map(f -> {
-                if(f.isAnnotationPresent(ForeignKey.class)) {
-                    return f.getName() + "=" + "this.getRelated(" + f.getName() + ")";
-                }
-                return f.getName() + "=" + "this." + f.getName();
-            })
-            .collect(Collectors.joining(", "));
+                .map(f -> {
+                    String fieldName = f.getName();
+                    String valueExpr;
+                    if (f.isAnnotationPresent(ForeignKey.class)) {
+                        // Escaped properly: getRelated("fieldName")
+                        valueExpr = "\" + getRelated(\\\"" + fieldName + "\\\") + \"";
+                    } else {
+                        valueExpr = "\" + " + fieldName + " + \"";
+                    }
+                    return fieldName + "=" + valueExpr;
+                })
+                .collect(Collectors.joining(", "));
 
-        return "return \"" + className + "{ " + toStringBody + "}";
-    }
+        return "@Override\npublic String toString() {\n" +
+                "    return \"" + className + "{ " + toStringBody + "}\";\n" +
+                "}";
+     }
 
     public boolean hasGetter(Class<? extends Model> modelClass, Field field) {
         Method[] methods = modelClass.getMethods();

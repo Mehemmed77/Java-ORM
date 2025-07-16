@@ -19,14 +19,11 @@ public class Comments extends Model {
     @ForeignKey(reference = Article.class, relatedName = "comments")
     public Article article;
 
-    @Override
-    public String toString() {
-        return "Comments{" +
-                "id=" + id +
-                ", comment='" + comment + '\'' +
-                ", article=" + article+
-                '}';
+    public Comments(String comment) {
+        this.comment = comment;
     }
+    public Comments() {}
+
 
     public int getId() {
         return this.id;
@@ -39,5 +36,8 @@ public class Comments extends Model {
     public Article getArticle() {
         return this.article;
     }
-
+@Override
+public String toString() {
+    return "Comments{ id=" + id + ", comment=" + comment + ", article=" + getRelated("article") + "}";
+}
 }

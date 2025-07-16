@@ -1,0 +1,110 @@
+[ {
+  "modelName" : "Users",
+  "tableName" : "Users",
+  "MIGRATION_ID" : "c484dbda-2297-432b-b799-af7bbdc2ff4f",
+  "TOString" : "@Override\npublic String toString() {\n    return \"Users{ id=\" + id + \", name=\" + name + \", email=\" + email + \", age=\" + age + \"}\";\n}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "id",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "name",
+    "primaryKey" : false
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 255,
+    "columnName" : "email",
+    "primaryKey" : false
+  }, {
+    "columnType" : "INTEGER",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "age",
+    "primaryKey" : false
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Article",
+  "tableName" : "Article",
+  "MIGRATION_ID" : "b2550fb8-90e3-4f12-9ac1-1f8ad827a357",
+  "TOString" : "@Override\npublic String toString() {\n    return \"Article{ id=\" + id + \", content=\" + content + \", author=\" + getRelated(\\\"author\\\") + \"}\";\n}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "TEXT",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "columnName" : "content",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "",
+    "nullable" : true,
+    "referencedModel" : "Models.Author",
+    "onUpdate" : "CASCADE"
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Author",
+  "tableName" : "Author",
+  "MIGRATION_ID" : "b06b2657-8e94-4bf0-ba62-705981791685",
+  "TOString" : "@Override\npublic String toString() {\n    return \"Author{ id=\" + id + \", authorName=\" + authorName + \"}\";\n}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : true,
+    "length" : 30,
+    "columnName" : "authorName",
+    "primaryKey" : false
+  } ],
+  "getters" : [ ]
+}, {
+  "modelName" : "Comments",
+  "tableName" : "Comments",
+  "MIGRATION_ID" : "78f57ea3-0c9d-4f69-b9e5-155351c92a1f",
+  "TOString" : "@Override\npublic String toString() {\n    return \"Comments{ id=\" + id + \", comment=\" + comment + \", article=\" + getRelated(\\\"article\\\") + \"}\";\n}",
+  "noArgConstructor" : false,
+  "columns" : [ {
+    "columnType" : "INTEGER",
+    "columnName" : "id",
+    "primaryKey" : true
+  }, {
+    "columnType" : "VARCHAR",
+    "nullable" : true,
+    "defaultValue" : "LOREM IPSUM",
+    "unique" : false,
+    "length" : 200,
+    "columnName" : "comment",
+    "primaryKey" : false
+  }, {
+    "onDelete" : "CASCADE",
+    "relatedName" : "comments",
+    "nullable" : true,
+    "referencedModel" : "Models.Article",
+    "onUpdate" : "CASCADE"
+  } ],
+  "getters" : [ ]
+} ]

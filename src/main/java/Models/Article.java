@@ -23,12 +23,16 @@ public class Article extends Model {
         return getRelated("author");
     }
 
-    public String getContent(){
-        return this.content;
-    }
 
     public int getId() {
         return this.id;
     }
 
+    public String getContent() {
+        return this.content;
+    }
+@Override
+public String toString() {
+    return "Article{ id=" + id + ", content=" + content + ", author=" + getRelated(\"author\") + "}";
+}
 }

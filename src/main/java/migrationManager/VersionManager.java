@@ -1,6 +1,5 @@
 package migrationManager;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,6 +62,6 @@ public class VersionManager {
         if(latestFile == null) return;
 
         WriterManager.write(parsedModels, latestFile);
-        WriterManager.getterWriter(parsedModels);
+        WriterManager.boilerPlateCodeWriter(parsedModels);
     }
 }

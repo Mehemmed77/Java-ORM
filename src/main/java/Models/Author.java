@@ -15,6 +15,10 @@ public class Author extends Model {
     @Column(name="authorName", type = ColumnType.VARCHAR, length = 30, unique = true)
     public String authorName;
 
+    public Author(String authorName) {
+        this.authorName = authorName;
+    }
+
     public int getId() {
         return this.id;
     }
@@ -23,4 +27,9 @@ public class Author extends Model {
         return this.authorName;
     }
 
+    public Author() {}
+@Override
+public String toString() {
+    return "Author{ id=" + id + ", authorName=" + authorName + "}";
+}
 }
